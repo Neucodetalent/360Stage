@@ -1,0 +1,112 @@
+{% load static %}
+{% load custom_filters %}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NeuAssessment</title>
+    
+    <!-- Link to favicon -->
+    <link rel="icon" type="image/x-icon" href="{% static 'App_User/image/user_brain_company_icon_no_bg.ico' %}">
+
+    <link rel="stylesheet" href="{% static 'App_User/User.css' %}">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        // // JavaScript function to handle popup and redirect after successful submission
+        // function showSuccessPopup(buttonName) {
+        //     if (buttonName === 'submit') {
+        //         alert("Your responses have been successfully submitted!");
+        //         window.location.href = "{% url 'user2_provider' %}?id={{ unique_id }}&email={{ email }}&cp_id={{ cp_id }}&provider_id={{ provider_id }}";  // Redirect to 'user2_provider' page after clicking OK
+        //     }
+        // }
+
+       // Function to check if all textareas are filled
+       function checkAllAnswered() {
+            const textAreas = document.querySelectorAll('textarea');
+            const continueButton = document.getElementById('continueButton');
+
+            // Check if all textareas are filled
+            const allAnswered = Array.from(textAreas).every(textarea => textarea.value.trim() !== "");
+
+            // Enable or disable the "Submit" button
+            continueButton.disabled = !allAnswered;
+            continueButton.style.opacity = allAnswered ? "1" : "0.6";
+        }
+
+        // Initial check on page load
+        document.addEventListener('DOMContentLoaded', checkAllAnswered);
+    </script>
+</head>
+<body>
+    <div class="container mt-5">
+        <div class="logo">
+            <img src="{% static 'App_User/image/user_removebg_preview.png' %}" alt="Company Logo">
+        </div>
+        <h1 class="text-center mb-4">NeuAssessment</h1>
+
+        <!-- Home Buttons -->
+        <div class="text-center mb-4" style="display: flex; justify-content: space-between; align-items: center;">
+            
+        <!-- </div> -->
+
+        <!-- Navigation Buttons -->
+        <!-- <div class="text-center mb-4"> -->
+            <a href="{% url 'user4_mcq_questions' %}?id={{ unique_id }}&email={{ email }}&cp_id={{ cp_id }}&provider_id={{ provider_id }}&seeker_id={{seeker_id}}" class="btn btn-secondary btn-lg">Back</a>
+            <a href="{% url 'user2_provider' %}?id={{ unique_id }}&email={{ email }}&cp_id={{ cp_id }}&provider_id={{ provider_id }}" class="btn btn-secondary btn-lg">Go Home</a>
+        </div>
+
+        {% if messages %}
+            <div class="alert-messages">
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        <!-- Display Seeker Name and Email -->
+        <div class="text-center mb-4">
+            <p><strong>Seeker Name:</strong> {{ seeker_name }}</p>
+            <p><strong>Seeker Email:</strong> {{ seeker_email }}</p>
+        </div>
+        
+        <p>Please answer the following questions:</p>
+
+        <!-- Form for written answers -->
+        <form method="POST" action="{% url 'user5_written_questions' %}?id={{ unique_id }}&email={{ email }}&cp_id={{ cp_id }}&provider_id={{ provider_id }}&seeker_id={{seeker_id}}" id="textForm" >
+            {% csrf_token %}
+
+            <div class="table-responsive">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>Question</th>
+                            <th>Your Answer</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for question in questionss %}
+                        <tr>
+                            <td>{{ question.question_text }}</td>
+                            <td>
+                                
+                                <textarea name="answer_{{ question.question_id }}" rows="5" class="form-control" placeholder="Type your answer here..." oninput="checkAllAnswered()">{% if draft_answers|get_item:question.question_id %}{{ draft_answers|get_item:question.question_id }}{% endif %}</textarea>
+                                
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="text-center mt-4">
+                <button type="submit" name="save_as_draft" class="btn btn-secondary btn-lg">Save as Draft</button>
+                <button type="submit" id="continueButton" name="submit" class="btn btn-primary btn-lg" disabled>Submit</button>
+                
+            </div>
+        </form>
+    </div>  
+</body>
+</html>

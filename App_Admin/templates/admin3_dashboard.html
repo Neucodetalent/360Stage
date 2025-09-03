@@ -1,0 +1,463 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NeuCode Admin | Dashboard</title>
+    <!-- Link to favicon -->
+    <link rel="icon" type="image/x-icon" href="{% static 'App_Admin/image/admin_brain_company_icon_no_bg.ico' %}">
+    
+    <link rel="stylesheet" href="{% static 'App_Admin/admin.css' %}">
+
+    <script>
+        
+        document.addEventListener('DOMContentLoaded', function () {
+            async function fetchClients() {
+                try {
+                    // Fetch clients from the backend API
+                    const response = await fetch('/fetch-client-fromview/');
+                    if (!response.ok) {
+                        throw new Error(`Failed to fetch clients: ${response.statusText}`);
+                    }
+
+                    // Parse JSON response
+                    const data = await response.json();
+                    console.log('Clients fetched:', data);
+
+                    // Get the dropdown element
+                    const clientDropdown = document.getElementById('clientDropdown');
+                    clientDropdown.innerHTML = '<option value="">All Clients</option>'; // Reset dropdown options
+
+                    // Populate the dropdown with fetched clients
+                    if (data.clients && data.clients.length > 0) {
+                        data.clients.forEach(client => {
+                            const option = document.createElement('option');
+                            option.value = client.client_name;
+                            option.textContent = client.client_name;
+                            clientDropdown.appendChild(option);
+                        });
+                    } else {
+                        console.warn('No clients found.');
+                    }
+                } catch (error) {
+                    console.error('Error fetching clients:', error);
+                }
+            }
+
+            
+        
+            async function refreshProjects() {
+            // Get the selected client name from the dropdown
+            const clientName = document.querySelector('#clientDropdown').value; 
+            // Select the project dropdown and reset it immediately
+            const projectSelect = document.querySelector('#projectDropdown');
+            projectSelect.innerHTML = '<option value="">Select Project</option>'; // Always reset the dropdown
+            if (!clientName) return; // Exit if no client is selected
+
+            try {
+                // Call the backend API using the selected client name
+                const response = await fetch(`/get-projects-by-client-fromview/${encodeURIComponent(clientName)}/`);
+                console.log('Selected Client Name:', clientName);
+                console.log('API Request URL:', `/get-projects-by-client-fromview/${encodeURIComponent(clientName)}/`);
+
+                if (!response.ok) throw new Error('Failed to fetch projects');
+
+                const data = await response.json(); // Parse the JSON response 
+                
+                // Debugging: Log the received data
+                console.log('Received Data:', data);
+
+               // Extract unique project names using a Set
+                const uniqueProjects = [...new Set(data.projects.map(project => project.project_name))];
+                
+                // Debugging: Log the unique project names
+                console.log('Unique Projects:', uniqueProjects);
+
+                // Populate the project dropdown
+                const projectSelect = document.querySelector('#projectDropdown');
+                projectSelect.innerHTML = '<option value="">Select Project</option>'; // Reset dropdown
+                // data.projects.forEach(project => {  
+                //     console.log('Project Object:', project);
+
+                //     const option = document.createElement('option');
+                //     option.value = project.project_name; // Use project_name as the value
+                //     option.textContent = project.project_name; // Display project_name
+                //     projectSelect.appendChild(option);
+                // });
+                uniqueProjects.forEach(projectName => {  
+                    const option = document.createElement('option');
+                    option.value = projectName; // Use project_name as the value
+                    option.textContent = projectName; // Display project_name
+                    projectSelect.appendChild(option);
+                });
+            } catch (error) {
+                console.error('Error fetching projects:', error);
+            }
+        }
+
+
+        async function updateTable() {
+            const clientDropdown = document.querySelector('select[name="client"]');
+            const projectDropdown = document.querySelector('select[name="project"]');
+            const statusDropdown = document.querySelector('select[name="status"]');
+            const seekerSearch = document.getElementById('seekerSearch').value.toLowerCase().trim();
+            const providerSearch = document.getElementById('providerSearch').value.toLowerCase().trim();
+
+            // Ensure dropdowns exist in DOM
+            if (!clientDropdown || !projectDropdown || !statusDropdown) {
+                console.error('Dropdown elements are missing from the DOM.');
+                return;
+            }
+
+            const clientName = clientDropdown.value;
+            const projectName = projectDropdown.value;
+            const status = statusDropdown.value;
+
+            try {
+                console.log('Fetching table data for:', { clientName, projectName, status });
+
+                // Fetch filtered data from backend
+                const response = await fetch(
+                    `/get-filtered-data-fromview/?client_name=${encodeURIComponent(clientName)}&project_name=${encodeURIComponent(projectName)}&status=${encodeURIComponent(status)}`
+                );
+
+                if (!response.ok) throw new Error('Failed to fetch filtered table data');
+
+                const data = await response.json();
+                console.log('Filtered Data:', data);
+
+                // Populate table
+                const tableBody = document.querySelector('.table tbody');
+                tableBody.innerHTML = ''; // Clear table
+
+                if (data.client_projects && data.client_projects.length > 0) {
+                    data.client_projects.forEach(project => {
+                        
+                        const seekerName = project.seeker_name ? project.seeker_name.toLowerCase() : '';
+                        const providerName = project.provider_name ? project.provider_name.toLowerCase() : '';
+
+                        // // Split names into first and last name parts
+                        // const seekerParts = seekerName.split(' ');
+                        // const providerParts = providerName.split(' ');
+
+                        // const seekerFirstName = seekerParts[0] || '';
+                        // const seekerLastName = seekerParts.length > 1 ? seekerParts[1] : '';
+
+                        // const providerFirstName = providerParts[0] || '';
+                        // const providerLastName = providerParts.length > 1 ? providerParts[1] : '';
+
+                        // // Split search query into first and last name parts
+                        // const seekerSearchParts = seekerSearch.split(' ');
+                        // const providerSearchParts = providerSearch.split(' ');
+
+                        // // Matching logic
+                        // const seekerMatches =
+                        //     seekerSearch === '' ||
+                        //     seekerName.includes(seekerSearch) ||
+                        //     seekerFirstName.startsWith(seekerSearchParts[0]) ||
+                        //     (seekerSearchParts.length > 1 && seekerLastName.startsWith(seekerSearchParts[1]));
+
+                        // const providerMatches =
+                        //     providerSearch === '' ||
+                        //     providerName.includes(providerSearch) ||
+                        //     providerFirstName.startsWith(providerSearchParts[0]) ||
+                        //     (providerSearchParts.length > 1 && providerLastName.startsWith(providerSearchParts[1]));
+
+                        // if (seekerMatches && providerMatches) {
+                        // Function to check if all search words exist in the text
+
+                        const matchesSearch = (text, search) => {
+                            if (!search) return true; // No search applied
+                            const searchWords = search.split(/\s+/); // Split by spaces
+                            return searchWords.every(word => text.includes(word)); // All words must exist in text
+                        };
+        
+                        if (
+                            matchesSearch(seekerName, seekerSearch) &&
+                            matchesSearch(providerName, providerSearch)
+                        ) {
+                            const row = document.createElement('tr');
+
+                            row.innerHTML = `
+                                <td>${project.seeker_name || 'N/A'}</td>
+                                <td>${project.seeker_email || 'N/A'}</td>
+                                <td>${project.provider_name || 'N/A'}</td>
+                                <td>${project.provider_email || 'N/A'}</td>
+                                <td>${project.relationship || 'N/A'}</td>
+                                <td>
+                                    <span class="badge ${
+                                        project.status === 'Open' ? 'bg-success' :
+                                        project.status === 'In-Progress' ? 'bg-warning' :
+                                        project.status === 'Completed' ? 'bg-primary' : 'bg-secondary'
+                                    }">
+                                        ${project.status ? project.status.charAt(0).toUpperCase() + project.status.slice(1) : 'N/A'}
+                                    </span>
+                                </td>
+                            `;
+
+                            tableBody.appendChild(row);
+                        }
+                    });
+                } else {
+                    const noDataRow = document.createElement('tr');
+                    noDataRow.innerHTML = '<td colspan="6" class="text-center">No data found for the selected filters.</td>';
+                    tableBody.appendChild(noDataRow);
+                }
+            } catch (error) {
+                console.error('Error fetching and populating table:', error);
+            }
+        }
+
+
+
+        async function fetchOverallHeader() {
+            try {
+                const response = await fetch('/overall-dashboard-header/');
+                if (!response.ok) throw new Error('Failed to fetch overall dashboard header');
+
+                const data = await response.json();
+                document.querySelector('.overall-participants').textContent = data.participants;
+                document.querySelector('.overall-open').textContent = data.open;
+                document.querySelector('.overall-in-progress').textContent = data.in_progress;
+                document.querySelector('.overall-completed').textContent = data.completed;
+            } catch (error) {
+                console.error('Error fetching overall dashboard header:', error);
+            }
+        }
+
+        async function fetchFilteredHeader() {
+            const clientName = document.querySelector('select[name="client"]').value;
+            const projectName = document.querySelector('select[name="project"]').value;
+            
+            try {
+                const response = await fetch(`/filtered-dashboard-header/?client_name=${encodeURIComponent(clientName)}&project_name=${encodeURIComponent(projectName)}`);
+                if (!response.ok) throw new Error('Failed to fetch filtered dashboard header');
+
+                const data = await response.json();
+                document.querySelector('.filtered-participants').textContent = data.participants;
+                document.querySelector('.filtered-open').textContent = data.open;
+                document.querySelector('.filtered-in-progress').textContent = data.in_progress;
+                document.querySelector('.filtered-completed').textContent = data.completed;
+            } catch (error) {
+                console.error('Error fetching filtered dashboard header:', error);
+            }
+        }
+
+        
+
+
+
+
+
+
+        // Client and Project Dropdowns
+        const clientDropdown = document.querySelector('select[name="client"]');
+        const projectDropdown = document.querySelector('select[name="project"]');
+        const statusDropdown = document.querySelector('select[name="status"]');
+
+        // Listener for Client Dropdown
+        if (clientDropdown) {
+            clientDropdown.addEventListener('change', () => {
+                console.log('Client selection changed:', clientDropdown.value);
+                
+                refreshProjects(); // Updates the project dropdown based on selected client
+                updateTable(); // Update the table
+            });
+        }
+
+        
+
+        // if (clientDropdown) {
+        //     clientDropdown.addEventListener('change', () => {
+        //         refreshProjects(); // Update the project dropdown
+        //         updateTable(); // Update the table
+                
+        //     });
+        // }
+
+        if (projectDropdown) {
+            projectDropdown.addEventListener('change', () => {
+            updateTable(); // Update the table
+            
+            }); 
+        }
+         
+        if (statusDropdown) {
+            statusDropdown.addEventListener('change', () => {
+            updateTable(); // Update the table
+            
+            }); 
+        }
+
+        // Listener for Search Inputs
+        document.getElementById('seekerSearch').addEventListener('input', updateTable);
+        document.getElementById('providerSearch').addEventListener('input', updateTable);
+
+        // Fetch data on dropdown change
+        document.querySelector('#clientDropdown').addEventListener('change', () => {
+            const clientName = document.querySelector('#clientDropdown').value;
+            const projectName = document.querySelector('#projectDropdown').value;
+            fetchFilteredHeader(clientName, projectName);
+        });
+
+        document.querySelector('#projectDropdown').addEventListener('change', () => {
+            const clientName = document.querySelector('#clientDropdown').value;
+            const projectName = document.querySelector('#projectDropdown').value;
+            fetchFilteredHeader(clientName, projectName);
+        });
+
+        document.querySelector('#statusDropdown').addEventListener('change', () => {
+            const clientName = document.querySelector('#clientDropdown').value;
+            const projectName = document.querySelector('#projectDropdown').value;
+            fetchFilteredHeader(clientName, projectName);
+        });
+        // Initial fetch on page load
+        document.addEventListener('DOMContentLoaded', fetchOverallHeader);
+
+
+
+
+
+        // Initial Function Calls
+        fetchClients();
+        refreshProjects(); // Populate projects on page load (if client is pre-selected)
+        updateTable();
+        fetchOverallHeader();
+        fetchFilteredHeader();
+    });
+    </script>
+    
+</head>
+<body>
+    <div class="container mt-5">
+        <div class="logo">
+            <img src="{% static 'App_Admin/image/admin_removebg_preview.png' %}" alt="Company Logo">
+        </div>
+
+        <h1>NeuCode Admin | Dashboard</h1>
+
+        {% if messages %}
+            <div class="alert-messages">
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }} mb-2">{{ message }}</div>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        <!-- Navigation Dropdown -->
+
+        <div class="mb-4">
+            <select onchange="location = this.value;" class="form-select">
+                <option value="{% url 'admin1_compose_email' %}" {% if request.resolver_match.url_name == 'admin1_compose_email' %}selected{% endif %}>Compose Email</option>
+                <option value="{% url 'admin2_generate_reports' %}" {% if request.resolver_match.url_name == 'admin2_generate_reports' %}selected{% endif %}>Generate Reports</option>
+                <option value="{% url 'admin3_dashboard' %}" {% if request.resolver_match.url_name == 'admin3_dashboard' %}selected{% endif %}>Dashboard</option>
+            </select>
+        </div> 
+        
+
+        <!-- Overall Dashboard Header -->
+        <h3>Overall Dashboard</h3>
+        <div class="card my-3">
+            <div class="card-body">
+                <div class="participants-box">
+                    <h5>Feedback Requested</h5>
+                    <h2 class="overall-participants">0</h2>
+                </div>
+                <div class="open-box">
+                    <h5>Open</h5>
+                    <h2 class="overall-open">0</h2>
+                </div>
+                <div class="in-progress-box">
+                    <h5>In Progress</h5>
+                    <h2 class="overall-in-progress">0</h2>
+                </div>
+                <div class="complete-box">
+                    <h5>Completed</h5>
+                    <h2 class="overall-completed">0</h2>
+                </div>
+            </div>
+        </div>
+
+        <!-- Filters Form -->
+        <div>
+            
+            <form method="get">
+                
+                <label for="clientDropdown">Select Client:</label>
+                <select id="clientDropdown" name="client" onchange="refreshProjects()">
+                    <option value="">All Clients</option>
+                </select>
+
+                <label for="projectDropdown">Select Project:</label>
+                <select id="projectDropdown" name="project">
+                    <option value="">All Projects</option>
+                </select>
+
+                <label for="statusDropdown">Select Status:</label>
+                <select id="statusDropdown" name="status">
+                    <option value="">All Status</option>
+                    <option value="Open">Open</option>
+                    <option value="In-Progress">In-Progress</option>
+                    <option value="Completed">Completed</option>
+                </select>
+
+            </form>
+        </div>
+
+        <!-- Filtered Dashboard Header -->
+        <h3>Filtered Dashboard</h3>
+        <div class="card my-3">
+            <div class="card-body">
+                <div class="participants-box">
+                    <h5>Feedback Requested</h5>
+                    <h2 class="filtered-participants">0</h2>
+                </div>
+                <div class="open-box">
+                    <h5>Open</h5>
+                    <h2 class="filtered-open">0</h2>
+                </div>
+                <div class="in-progress-box">
+                    <h5>In Progress</h5>
+                    <h2 class="filtered-in-progress">0</h2>
+                </div>
+                <div class="complete-box">
+                    <h5>Completed</h5>
+                    <h2 class="filtered-completed">0</h2>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Embedding the Dash app -->
+        <!-- Search Boxes -->
+        <div class="search-container mb-4">
+            <label for="seekerSearch">Search Seeker Name:</label>
+            <input type="text" id="seekerSearch" name="seekerSearch" class="form-control" placeholder="Type to search...">
+            
+            <label for="providerSearch">Search Provider Name:</label>
+            <input type="text" id="providerSearch" name="providerSearch" class="form-control" placeholder="Type to search...">
+        </div>  
+
+        <!-- Table -->
+        
+        <div class="table-container" style="position: relative; max-height: 300px; overflow-y: auto; overflow-x: auto; border: 1px solid #ddd; border-radius: 5px;">
+            <table class="table table-striped table-bordered" style="width: 98%; border-collapse: collapse;">
+                <thead style="position: sticky; top: 0; z-index: 2; background-color: #3498db;">
+                    <tr>
+                        <th style="width: 15%;">Seeker Name</th>
+                        <th style="width: 20%;">Seeker Email</th>
+                        <th style="width: 15%;">Provider Name</th>
+                        <th style="width: 20%;">Provider Email</th>
+                        <th style="width: 15%;">Relationship</th>
+                        <th style="width: 15%;">Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Dynamic rows will be populated here -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+</body>
+</html> 

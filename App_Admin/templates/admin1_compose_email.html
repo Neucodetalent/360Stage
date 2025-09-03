@@ -1,0 +1,1046 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NeuCode Admin | Email Trigger</title>
+    <!-- Link to favicon -->
+    <link rel="icon" type="image/x-icon" href="{% static 'App_Admin/image/admin_brain_company_icon_no_bg.ico' %}">
+    
+    <link rel="stylesheet" href="{% static 'App_Admin/admin.css' %}">
+    
+    <!-- TinyMCE for rich text editing with advanced features -->
+    <!-- Include TinyMCE in the <head> -->
+        <script src="https://cdn.tiny.cloud/1/mjwd0entcrisi7wt5cx7zlk4hbrp5s2n6be5teygqenr79b8/tinymce/7/tinymce.min.js" referrerpolicy="origin"></script>
+
+
+
+    <script>
+        
+        document.addEventListener('DOMContentLoaded', function () {
+            async function fetchClients() {
+                try {
+                    // Fetch clients from the backend API
+                    const response = await fetch('/fetch-client/');
+                    if (!response.ok) {
+                        throw new Error(`Failed to fetch clients: ${response.statusText}`);
+                    }
+
+                    // Parse JSON response
+                    const data = await response.json();
+                    console.log('Clients fetched:', data);
+
+                    // Get the dropdown element
+                    const clientDropdown = document.getElementById('clientDropdown');
+                    clientDropdown.innerHTML = '<option value="">Select Clients</option>'; // Reset dropdown options
+                    //clientDropdown.innerHTML = ''; // Reset dropdown options
+
+                    // // Add 'All Clients' option at the beginning
+                    // const allClientsOption = document.createElement('option');
+                    // allClientsOption.value = 'All Clients';
+                    // allClientsOption.textContent = 'All Clients';
+                    // clientDropdown.appendChild(allClientsOption);
+
+                    // Populate the dropdown with fetched clients
+                    if (data.clients && data.clients.length > 0) {
+                        data.clients.forEach(client => {
+                            const option = document.createElement('option');
+                            option.value = client.client_name;
+                            option.textContent = client.client_name;
+                            clientDropdown.appendChild(option);
+                        });
+                    } else {
+                        console.warn('No clients found.');
+                    }
+                } catch (error) {
+                    console.error('Error fetching clients:', error);
+                }
+            }
+
+            
+        
+            async function refreshProjects() {
+            // Get the selected client name from the dropdown
+            const clientName = document.querySelector('#clientDropdown').value; 
+
+            // Select the project dropdown and reset it immediately
+            const projectSelect = document.querySelector('#projectDropdown');
+            projectSelect.innerHTML = '<option value="">Select Project</option>'; // Always reset the dropdown
+            if (!clientName) return; // Exit if no client is selected
+
+            try {
+                // Call the backend API using the selected client name
+                const response = await fetch(`/get-projects-by-client/${encodeURIComponent(clientName)}/`);
+                console.log('Selected Client Name:', clientName);
+                console.log('API Request URL:', `/get-projects-by-client/${encodeURIComponent(clientName)}/`);
+
+                if (!response.ok) throw new Error('Failed to fetch projects');
+
+                const data = await response.json(); // Parse the JSON response 
+                
+                // Debugging: Log the received data
+                console.log('Received Data:', data);
+
+                // // Display the client name
+                // const clientNameDisplay = document.querySelector('#clientNameDisplay');
+                // if (clientNameDisplay) {
+                //     clientNameDisplay.textContent = `Client: ${data.client_name}`;
+                // }
+
+                // Populate the project dropdown
+                const projectSelect = document.querySelector('#projectDropdown');
+                projectSelect.innerHTML = '<option value="">Select Project</option>'; // Reset dropdown
+                data.projects.forEach(project => {  
+                    console.log('Project Object:', project);
+
+                    const option = document.createElement('option');
+                    option.value = project.project_name; // Use project_name as the value
+                    option.textContent = project.project_name; // Display project_name
+                    projectSelect.appendChild(option);
+                });
+            } catch (error) {
+                console.error('Error fetching projects:', error);
+            }
+        }
+
+
+        // Update Status Dropdowns
+        // async function updateSeekerAndStatus() {
+        
+        //     const clientName = document.querySelector('select[name="client"]').value; // Get selected client name
+        //     const projectName = document.querySelector('select[name="project"]').value; // Get selected project name
+
+        //     // if (!clientName) {
+        //     //     alert('Please select both Client and Project.');
+        //     //     console.warn('Client and Project must be selected to fetch data.');
+        //     //     return;
+        //     // }
+
+        //     try {
+
+        //         console.log('Fetching data for Client:', clientName, 'Project:', projectName);
+
+        //         // Fetch seekers and statuses for the selected client and project
+        //         const response = await fetch(`/get-seekers-and-statuses/?client_name=${encodeURIComponent(clientName)}&project_name=${encodeURIComponent(projectName)}`);
+        //         if (!response.ok) throw new Error('Failed to fetch seekers and statuses');
+                
+        //         const data = await response.json(); // Parse JSON response
+        //         console.log('API Response:', data);
+
+        //         // Populate status dropdown
+        //         const statusDropdown = document.querySelector('#statusDropdown');
+        //         statusDropdown.innerHTML = '<option value="">Select Status</option>';
+        //         if (Array.isArray(data.statuses)) {
+        //             data.statuses.forEach(status => {
+        //                 const option = document.createElement('option');
+        //                 option.value = status;
+        //                 option.textContent = status;
+        //                 statusDropdown.appendChild(option);
+        //             });
+        //         } else {
+        //             console.error('Invalid statuses data:', data.statuses);
+        //         }
+        //     } catch (error) {
+        //         console.error('Error fetching seekers and statuses:', error);
+        //     }
+        // }
+
+        async function updateTable() {
+            const clientName = document.querySelector('select[name="client"]').value;
+            const projectName = document.querySelector('select[name="project"]').value;
+
+            try {
+                console.log('Fetching table data for:', { clientName, projectName });
+
+                // Fetch filtered data from the backend
+                const response = await fetch(`/get-filtered-data/?client_name=${encodeURIComponent(clientName)}&project_name=${encodeURIComponent(projectName)}`);
+                if (!response.ok) throw new Error('Failed to fetch filtered table data');
+                
+                const data = await response.json(); // Parse the JSON response
+                console.log('Filtered Data:', data);
+
+                // Populate the table
+                const tableBody = document.querySelector('.table tbody');
+                tableBody.innerHTML = ''; // Clear existing table rows
+
+                if (data.seekers && data.seekers.length > 0) {
+                    data.seekers.forEach(seeker => {
+                        const row = document.createElement('tr');
+
+                        row.innerHTML = `
+                            <td>${seeker.seeker_name}</td>
+                            <td>${seeker.seeker_email}</td>
+                            <td>${seeker.provider_name || 'N/A'}</td>
+                            <td>${seeker.provider_email || 'N/A'}</td>
+                            <td>${seeker.relationship || 'N/A'}</td>
+                        `;
+
+                        tableBody.appendChild(row);
+                    });
+                } else {
+                    const noDataRow = document.createElement('tr');
+                    noDataRow.innerHTML = '<td colspan="5" class="text-center">No data found for the selected filters.</td>';
+                    tableBody.appendChild(noDataRow);
+                }
+            } catch (error) {
+                console.error('Error fetching and populating table:', error);
+            }
+        }
+
+
+        // async function updateTable() {
+        //     const clientName = document.querySelector('select[name="client"]').value;
+        //     const projectName = document.querySelector('select[name="project"]').value;
+        //     const status = document.querySelector('select[name="status"]').value;
+
+        //     try {
+        //         console.log('Fetching table data for:', { clientName, projectName, status });
+
+        //         // Fetch filtered data from the backend
+        //         const response = await fetch(`/get-filtered-data/?client_name=${encodeURIComponent(clientName)}&project_name=${encodeURIComponent(projectName)}&status=${encodeURIComponent(status)}`);
+        //         if (!response.ok) throw new Error('Failed to fetch filtered table data');
+                
+        //         const data = await response.json(); // Parse the JSON response
+        //         console.log('Filtered Data:', data);
+
+        //         // Populate the table
+        //         const tableBody = document.querySelector('.table tbody');
+        //         tableBody.innerHTML = ''; // Clear existing table rows
+
+        //         if (data.seekers && data.seekers.length > 0) {
+        //             data.seekers.forEach(seeker => {
+        //                 const row = document.createElement('tr');
+
+        //                 row.innerHTML = `
+        //                     <td>${seeker.seeker_name}</td>
+        //                     <td>${seeker.seeker_email}</td>
+        //                     <td>${seeker.provider_name || 'N/A'}</td>
+        //                     <td>${seeker.provider_email || 'N/A'}</td>
+        //                     <td>${seeker.relationship || 'N/A'}</td>
+        //                     <td>
+        //                         <span class="badge ${
+        //                             seeker.status === 'open' ? 'bg-success' :
+        //                             seeker.status === 'in_progress' ? 'bg-warning' :
+        //                             seeker.status === 'completed' ? 'bg-primary' : 'bg-secondary'
+        //                         }">
+        //                             ${seeker.status ? seeker.status.charAt(0).toUpperCase() + seeker.status.slice(1) : 'N/A'}
+        //                         </span>
+        //                     </td>
+        //                 `;
+
+        //                 tableBody.appendChild(row);
+        //             });
+        //         } else {
+        //             const noDataRow = document.createElement('tr');
+        //             noDataRow.innerHTML = '<td colspan="6" class="text-center">No data found for the selected filters.</td>';
+        //             tableBody.appendChild(noDataRow);
+        //         }
+        //     } catch (error) {
+        //         console.error('Error fetching and populating table:', error);
+        //     }
+        // }
+
+        
+        // Fetch Emails Based on Selected Filters and Email Type
+        async function fetchEmails() {
+            const clientName = document.querySelector('select[name="client"]').value; // Selected client
+            const projectName = document.querySelector('select[name="project"]').value; // Selected project
+            //const status = document.querySelector('select[name="status"]').value;
+            const emailType = document.querySelector('input[name="email_type"]:checked').value; // Selected email type (seeker, provider, superuser)
+
+            //Ensure both client and project are selected
+            if (!clientName || !projectName) {
+                alert('Please select both Client and Project.');
+                console.warn('Client and Project must be selected to fetch emails.');
+                return;
+            }
+
+            try {
+                console.log('Fetching emails for:', { clientName, projectName, emailType });
+
+                // Send API request with filters
+                const response = await fetch(`/fetch-emails/?client_name=${encodeURIComponent(clientName)}&project_name=${encodeURIComponent(projectName)}`);
+                // const response = await fetch(`/fetch-emails/?client_name=${encodeURIComponent(clientName)}&project_name=${encodeURIComponent(projectName)}&status=${encodeURIComponent(status)}`);
+                if (!response.ok) {
+                    throw new Error('Failed to fetch emails');
+                }
+
+                const data = await response.json(); // Parse JSON response
+                console.log('Received Email Data:', data);
+
+                // Update the email field based on the selected email type
+                const emailField = document.querySelector('#email_field'); // Text area to display emails
+                let emails = [];
+
+                if (emailType === 'seeker' && data.seeker_emails) {
+                    emails = data.seeker_emails;
+                } else if (emailType === 'provider' && data.provider_emails) {
+                    emails = data.provider_emails;
+                } else if (emailType === 'superuser' && data.super_emails) {
+                    emails = data.super_emails;
+                } else if (emailType === 'seeker_status' && data.seeker_status_emails) {
+                    emails = data.seeker_status_emails;
+                } else if (emailType === 'provider_status' && data.provider_status_emails) {
+                    emails = data.provider_status_emails;
+                } else {
+                    console.warn('Invalid email type or no emails found.');
+                }
+
+                // Display emails or clear the field if no data
+                if (emails.length > 0) {
+                    emailField.value = emails.join(', '); // Join emails with commas
+                } else {
+                    emailField.value = ''; // Clear the field if no emails are found
+                }
+            } catch (error) {
+                console.error('Error fetching emails:', error);
+            }
+        }
+
+        // Toggle CC Field Based on Email Type
+        // function toggleCCField() {
+        //     const emailType = document.querySelector('input[name="email_type"]:checked').value; // Get selected email type
+        //     const ccField = document.querySelector('#cc_field'); // CC field container
+        //     const ccInput = document.querySelector('#cc_input'); // CC input field
+
+        //     console.log('Selected Email Type:', emailType); // Debugging log
+
+        //     if (emailType === 'seeker') {
+        //         // Enable the CC field and input for seeker email type
+        //         ccField.classList.remove('disabled'); // Optional: Remove custom disabled styling
+        //         ccInput.disabled = false; // Enable input field
+        //         updateCCOptions(); // Populate CC options dynamically
+        //     } else {
+        //         // Disable the CC field and input for other email types
+        //         ccField.classList.add('disabled'); // Optional: Add custom disabled styling
+        //         ccInput.disabled = true; // Disable input field
+        //         ccInput.value = ''; // Clear input field to avoid confusion
+        //     }
+        // }
+
+        // Fetch and Populate CC Emails Dynamically
+        // async function updateCCOptions() {
+        //     const clientId = document.querySelector('select[name="client"]').value; // Selected client
+        //     const projectId = document.querySelector('select[name="project"]').value; // Selected project
+
+        //     // if (!clientId || !projectId) {
+        //     //     console.warn('Client and Project must be selected to fetch CC emails.');
+        //     //     return;
+        //     // }
+
+        //     try {
+        //         console.log('Fetching CC emails for:', { clientId, projectId }); // Debugging log
+        //         const response = await fetch(`/get-cc-emails/?client_name=${encodeURIComponent(clientId)}&project_name=${encodeURIComponent(projectId)}`);
+        //         if (!response.ok) throw new Error(`Failed to fetch CC emails: ${response.statusText}`);
+
+        //         const data = await response.json();
+        //         console.log('Received CC emails:', data); // Debugging log
+
+        //         // Populate CC input field with fetched emails
+        //         const ccInput = document.querySelector('#cc_input');
+        //         if (data.ccEmails && Array.isArray(data.ccEmails) && data.ccEmails.length > 0) {
+        //             ccInput.value = data.ccEmails.join(', '); // Join emails with commas
+        //         } else {
+        //             console.warn('No CC emails found for the selected Client and Project.');
+        //             ccInput.value = ''; // Clear the field if no data is found
+        //         }
+        //     } catch (error) {
+        //         console.error('Error fetching CC emails:', error);
+        //     }
+        // }
+
+
+        // Toggle Insert Link Radio Option
+        // function toggleEmailOptions() {
+        //     const emailType = document.querySelector('input[name="email_type"]:checked').value;
+        //     const insertLinkRadio = document.querySelector('#insert_link');
+        //     insertLinkRadio.disabled = emailType === 'seeker';
+        // }
+
+
+        // DOM Elements
+        const insertLinkCheckbox = document.querySelector('#insert_link');
+        // const emailTypeRadios = document.querySelectorAll('input[name="email_type"]');
+        // const clientDropdown = document.querySelector('#clientDropdown');
+        // const projectDropdown = document.querySelector('#projectDropdown');
+
+        
+
+        // Utility: Debounce function to limit the frequency of event calls
+        function debounce(func, delay) {
+            let timer;
+            return function (...args) {
+                clearTimeout(timer);
+                timer = setTimeout(() => func.apply(this, args), delay);
+            };
+        }
+
+        function initializeTinyMCE() {
+            tinymce.init({
+                selector: 'textarea:not(.no-tinymce)', // Exclude elements with the "no-tinymce" class
+                plugins: [ 'anchor', 'autolink', 'charmap', 'codesample', 'emoticons',
+                    'image', 'link', 'lists', 'media', 'searchreplace',
+                    'table', 'visualblocks', 'wordcount'],
+                toolbar: 'undo redo | bold italic underline strikethrough | link image media table mergetags | checklist numlist bullist | removeformat',
+                fontsize_formats: "8pt 10pt 12pt 14pt 18pt 24pt 36pt",
+                branding: false,
+                entity_encoding: 'raw', // Prevents encoding of special characters
+                setup: function (editor) {
+                    
+
+                    editor.on('init', function () {
+                        const emailBodyElement = document.getElementById('emailBody');
+                        if (emailBodyElement) {
+                            emailBodyElement.removeAttribute('required');
+                        }   
+                    });
+                    
+                    
+                }
+
+                
+            });
+            // Ensure the form is validated
+            document.querySelector('form').addEventListener('submit', function (e) {
+                const editor = tinymce.get('emailBody');
+                const htmlContent = editor?.getContent() || ''; // Get HTML content
+                console.log("Submitted Content:", htmlContent); // Log for debugging
+
+                if (!htmlContent.trim()) {
+                    e.preventDefault();
+                    alert('Email Body is required!');
+                }
+                
+            });
+        }
+
+        /**
+         * Fetch Unique Links for Providers or Superusers
+         * @param {string} emailType - The selected email type
+         * @param {string} clientName - The selected client name
+         * @param {string} projectName - The selected project name
+         * @returns {Promise<Object>} - Response data containing generated links
+         */
+        async function fetchUniqueLinks(emailType, clientName, projectName) {
+            const url = `/insert-link/?client_name=${encodeURIComponent(clientName)}&project_name=${encodeURIComponent(projectName)}&email_type=${emailType}&insert_link=true`;
+            const response = await fetch(url);
+
+            if (!response.ok) throw new Error('Failed to generate links.');
+
+            return await response.json();
+        }
+
+        // Handle Insert Link Checkbox Change
+        
+        // async function handleInsertLinkCheckboxChange() {
+        //     const messageContainer = document.getElementById('messageContainer'); // Element to display messages
+        //     messageContainer.innerText = "Generating unique links..."; // Clear previous messages
+        //     messageContainer.innerText = "Unique URLs is Started generated wait for few mintues and Link will be inserted after '>>>>' in the email body."
+        //     messageContainer.style.color = "#B8860B";
+
+        //     if (insertLinkCheckbox.checked) {
+        //         // Disable the checkbox to prevent multiple clicks
+        //         insertLinkCheckbox.disabled = true;
+
+        //         const emailType = getSelectedEmailType();
+        //         const clientName = clientDropdown?.value;
+        //         const projectName = projectDropdown?.value;
+
+        //         if (!emailType || !clientName || !projectName) {
+        //             messageContainer.innerText = "⚠ Please select an email type, client, and project.";
+        //             messageContainer.style.color = "red";
+        //             console.warn("Client and Project must be selected to fetch links.");
+        //             insertLinkCheckbox.checked = false;
+        //             insertLinkCheckbox.disabled = false; // Re-enable the checkbox
+        //             return;
+        //         }
+
+        //         try {
+        //             // // Call API to generate unique links
+        //             // const data = await fetchUniqueLinks(emailType, clientName, projectName);
+        //             // console.log("Generated Links:", data.message);
+        //             // console.log("Server Response:", response);
+
+        //             // // Show success message on screen
+        //             // messageContainer.innerText = "🟡 Unique URLs is Started generated and will be inserted after '>>>>' in the email body.";
+        //             // messageContainer.style.color = "#B8860B";
+        //             const response = await fetchUniqueLinks(emailType, clientName, projectName);
+        //             console.log("Server Response:", response);
+
+        //             // // ✅ Start listening to real-time SSE updates
+        //             // const eventSource = new EventSource("/send_sse_message/");
+
+        //             // eventSource.onmessage = function(event) {
+        //             //     console.log("Received message:", event.data);
+        //             //     messageContainer.innerText = event.data;
+        //             //     messageContainer.style.color = "green";
+        //             // }
+
+        //             // eventSource.onerror = function(error) {
+        //             //     console.error("SSE Error:", error);
+        //             //     eventSource.close();
+        //             // }
+        //         } catch (error) {
+        //             console.error("Error generating unique links:", error);
+                    
+        //             // Show error message on screen
+        //             messageContainer.innerText = "❌ An error occurred while generating unique links.";
+        //             messageContainer.style.color = "red";
+
+        //             insertLinkCheckbox.checked = false;
+        //         } finally {
+        //             // Re-enable the checkbox
+        //             insertLinkCheckbox.disabled = false;
+        //         }
+        //     } else {
+        //         console.log("Insert Link checkbox is unchecked. No links will be generated.");
+        //         messageContainer.innerText = "";
+        //     }
+        // }
+
+        async function handleInsertLinkCheckboxChange() {
+            const messageContainer = document.getElementById('messageContainer'); // Element to display messages
+            const insertLinkCheckbox = document.getElementById('insert_link'); // Generate Link checkbox
+            const emailType = getSelectedEmailType(); // Get selected email type
+            const clientName = clientDropdown?.value;
+            const projectName = projectDropdown?.value;
+
+            // Reset message
+            messageContainer.innerText = "Generating unique links...";
+            messageContainer.style.color = "#B8860B";
+
+            if (!insertLinkCheckbox.checked) {
+                console.log("Insert Link checkbox is unchecked. No links will be generated.");
+                messageContainer.innerText = "";
+                return;
+            }
+
+            if (!emailType || !clientName || !projectName) {
+                messageContainer.innerText = "⚠ Please select an email type, client, and project.";
+                messageContainer.style.color = "red";
+                console.warn("Client and Project must be selected to fetch links.");
+                insertLinkCheckbox.checked = false;
+                return;
+            }
+
+            try {
+                // Disable checkbox to prevent multiple clicks
+                insertLinkCheckbox.disabled = true;
+                messageContainer.innerText = "Unique URLs are being generated... Please wait.";
+
+                // Call API to generate unique links
+                const response = await fetchUniqueLinks(emailType, clientName, projectName);
+                console.log("Server Response:", response);
+
+                // Handle success response
+                messageContainer.innerText = "Unique URLs have started generating. Please wait for a few minutes...., and the link will be inserted at '>>>>' in the email body.";
+                messageContainer.style.color = "green";
+            } catch (error) {
+                console.error("Error generating unique links:", error);
+
+                // Show error message on screen
+                messageContainer.innerText = "❌ An error occurred while generating unique links.";
+                messageContainer.style.color = "red";
+
+                insertLinkCheckbox.checked = false;
+            } finally {
+                // Re-enable the checkbox
+                insertLinkCheckbox.disabled = false;
+            }
+        }
+
+
+        
+        // Function to send client and project data to the backend
+        async function sendDataToBackend() {
+            const clientDropdown = document.querySelector('select[name="client"]');
+            const projectDropdown = document.querySelector('select[name="project"]');
+            const clientName = clientDropdown?.value;
+            const projectName = projectDropdown?.value;
+            const emailType = getSelectedEmailType();
+
+
+            if (clientName && projectName) {
+                try {
+                    const response = await fetch(`/compose-email/?client_name=${encodeURIComponent(clientName)}&project_name=${encodeURIComponent(projectName)}&email_type=${encodeURIComponent(emailType)}`, {
+                        method: 'GET',
+                    });
+
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+
+                    const data = await response.json();
+                    console.log('Data received from backend:', data); // Debug log to confirm data reception
+                    return data;
+                } catch (error) {
+                    console.error('Error sending data to backend:', error);
+                    return null;
+                }
+            } else {
+                return null;
+            }return clientName && projectName ? { clientName, projectName } : null;
+        }
+
+            
+        /**
+         * Get Selected Email Type
+         * @returns {string|null} - The selected email type
+         */
+        function getSelectedEmailType() {
+            const selectedRadio = document.querySelector('input[name="email_type"]:checked');
+            return selectedRadio ? selectedRadio.value : null;
+        }
+
+        // Attach event listener to the form
+        const form = document.querySelector('#emailForm');
+        const messageContainer = document.getElementById('messageContainer2');
+
+        form.addEventListener('submit', function (event) {
+            
+            const clientDropdown = document.querySelector('select[name="client"]');
+            const projectDropdown = document.querySelector('select[name="project"]');
+            const clientName = clientDropdown?.value;
+            const projectName = projectDropdown?.value;
+            const emailType = getSelectedEmailType(); // Call the function to get selected email_type
+            //const clientProjectData =  sendDataToBackend();
+            //sendDataToBackend();
+            // Debugging to ensure the selected email type is captured
+            console.log('Selected Client Name:', clientName);
+            console.log('Selected Project Name:', projectName);
+            console.log('Selected Email Type:', emailType);
+
+            // Create or update a hidden input field for email_type
+            let emailTypeInput = form.querySelector('input[name="email_type"]');
+            if (!emailTypeInput) {
+                emailTypeInput = document.createElement('input');
+                emailTypeInput.setAttribute('type', 'hidden');
+                emailTypeInput.setAttribute('name', 'email_type');
+                form.appendChild(emailTypeInput);
+            }
+            emailTypeInput.value = emailType; // Assign the selected email type to the hidden input
+
+            // Create or update a hidden input field for client_name
+            let clientNameInput = form.querySelector('input[name="client_name"]');
+            if (!clientNameInput) {
+                clientNameInput = document.createElement('input');
+                clientNameInput.setAttribute('type', 'hidden');
+                clientNameInput.setAttribute('name', 'client_name');
+                form.appendChild(clientNameInput);
+            }
+            clientNameInput.value = clientName; // Assign the selected client name to the hidden input
+
+            // Create or update a hidden input field for project_name
+            let projectNameInput = form.querySelector('input[name="project_name"]');
+            if (!projectNameInput) {
+                projectNameInput = document.createElement('input');
+                projectNameInput.setAttribute('type', 'hidden');
+                projectNameInput.setAttribute('name', 'project_name');
+                form.appendChild(projectNameInput);
+            }
+            projectNameInput.value = projectName; // Assign the selected project name to the hidden input
+
+            console.log('Submitting client_name:', clientName); // Debug log to confirm submission
+            console.log('Submitting project_name:', projectName); // Debug log to confirm submission
+
+
+            console.log('Submitting email_type:', emailType); // Debug log to confirm submission
+            
+        });
+        
+        
+        // async function fetchOpenInProgressData() {
+        //     const clientDropdown = document.querySelector('select[name="client"]');
+        //     const projectDropdown = document.querySelector('select[name="project"]');
+        //     const clientName = clientDropdown.value;
+        //     const projectName = projectDropdown.value;
+
+        //     if (!clientName || !projectName) {
+        //         alert('Please select both Client and Project.');
+        //         return;
+        //     }
+
+        //     try {
+        //         console.log('Fetching open/in-progress data for:', { clientName, projectName });
+
+        //         // Fetch filtered data from the backend
+        //         const response = await fetch(`/get-open-inprogress-data/?client_name=${encodeURIComponent(clientName)}&project_name=${encodeURIComponent(projectName)}`);
+        //         if (!response.ok) throw new Error('Failed to fetch open/in-progress data');
+
+        //         const data = await response.json(); // Parse the JSON response
+        //         console.log('Open/In-Progress Data:', data);
+
+        //         // Handle the response data as needed
+        //         // For example, you can update the UI or store the data for further processing
+        //     } catch (error) {
+        //         console.error('Error fetching open/in-progress data:', error);
+        //     }
+        // }
+
+        
+        /**
+         * Reset Insert Link Checkbox on Email Type Change
+         */
+        // function resetInsertLinkOnTypeChange() {
+        //     insertLinkCheckbox.checked = false;
+        //     console.log("Insert Link checkbox has been reset due to email type change.");
+        // }
+
+        /**
+         * Attach Event Listeners
+         */
+
+        // Client and Project Dropdowns
+        // const insertLinkCheckbox = document.querySelector('#insert_link');
+        const clientDropdown = document.querySelector('select[name="client"]');
+        const projectDropdown = document.querySelector('select[name="project"]');
+
+        // Listener for Client Dropdown
+        if (clientDropdown) {
+            clientDropdown.addEventListener('change', () => {
+                console.log('Client selection changed:', clientDropdown.value);
+                refreshProjects(); // Updates the project dropdown based on selected client
+                //updateSeekerAndStatus(); // Updates seeker and status dropdowns
+                
+            });
+        }
+
+        // Listener for Project Dropdown
+        if (projectDropdown) {
+            projectDropdown.addEventListener('change', () => {
+                console.log('Project selection changed:', projectDropdown.value);
+                //updateSeekerAndStatus(); // Updates seeker and status dropdowns
+               
+            });
+        }
+
+        // Attach Event Listeners to Update Table
+    
+        // const statusDropdown = document.querySelector('select[name="status"]');
+
+        if (clientDropdown) {
+            clientDropdown.addEventListener('change', () => {
+                refreshProjects(); // Update the project dropdown
+                //updateTable(); // Update the table
+                
+            });
+        }
+
+        if (projectDropdown) {
+            projectDropdown.addEventListener('change', () => {
+            updateTable(); // Update the table
+            
+            }); 
+        }
+
+        // if (statusDropdown) {
+        //     statusDropdown.addEventListener('change', updateTable); // Update the table
+        // }
+
+        
+        if (clientDropdown) {
+            clientDropdown.addEventListener('change', () => {
+                fetchEmails(); // Trigger email fetching when client or project changes
+            });
+        }
+
+        if (projectDropdown) {
+            projectDropdown.addEventListener('change', () => {
+            fetchEmails(); // Trigger email fetching when client or project changes
+            }); 
+        }
+
+
+        // Radio Buttons for Email Type
+        const emailTypeRadios = document.querySelectorAll('input[name="email_type"]');
+        
+
+        if (emailTypeRadios) {
+            emailTypeRadios.forEach(radio => {
+                radio.addEventListener('change', () => {
+                    fetchEmails(); // Trigger email fetching when email type changes
+                    //toggleCCField(); // Toggles CC field visibility
+                    
+                    //toggleEmailOptions(); // Toggles email options (e.g., unique link insertion)
+                    //handleEmailTypeChange(); // Handles email type changes
+                });
+            });
+        }
+        
+
+        
+
+        
+        // Attach Event Listeners
+        function attachEventListeners() {
+            insertLinkCheckbox.addEventListener('change', handleInsertLinkCheckboxChange);
+            // emailTypeRadios.forEach(radio => {
+            //     radio.addEventListener('change', resetInsertLinkOnTypeChange);
+            // });
+        }
+
+        // Initialize
+        function initialize() {
+            initializeTinyMCE();
+            insertLinkCheckbox.addEventListener('change', handleInsertLinkCheckboxChange);
+            attachEventListeners();
+
+        }
+
+        // function attachEventListeners() {
+        //     // Insert Link Checkbox Listener
+        //     insertLinkCheckbox.addEventListener('change', handleInsertLinkCheckboxChange);
+
+        //     // Email Type Radio Button Listener
+        //     emailTypeRadios.forEach(radio => {
+        //         radio.addEventListener('change', resetInsertLinkOnTypeChange);
+        //     });
+        // }
+
+        // /**
+        //  * Initialize Script
+        //  */
+        // function initialize() {
+        //     initializeTinyMCE();
+        //     attachEventListeners();
+        // }
+
+        
+        // Attach event listener to the "Open/In-Progress Status Email" radio button
+        // const statusEmailRadio = document.getElementById('status_email');
+        // if (statusEmailRadio) {
+        //     statusEmailRadio.addEventListener('change', () => {
+        //         if (statusEmailRadio.checked) {
+        //             fetchOpenInProgressData();
+        //         }
+        //     });
+        // }
+
+        
+        const radioButtons = document.querySelectorAll('input[name="email_type"]');
+        //const insertLinkCheckbox = document.getElementById("insert_link");
+
+        // Function to enable/disable the checkbox based on selected radio button
+        function toggleGenerateLink() {
+            const selectedValue = document.querySelector('input[name="email_type"]:checked').value;
+            const insertLinkCheckbox = document.getElementById('insert_link');
+            const insertLinkLabel = document.querySelector('label[for="insert_link"]');
+
+            if (selectedValue === "seeker_status" || selectedValue === "provider_status") {
+                insertLinkCheckbox.disabled = true;  // Disable when "Open/In-Progress Status Email" is selected
+                insertLinkCheckbox.checked = false;  // Uncheck it
+                insertLinkLabel.classList.add('faded');
+            } else {
+                insertLinkCheckbox.disabled = false; // Enable for other options
+                insertLinkLabel.classList.remove('faded'); // Remove faded class
+            }
+        }
+
+        // Function to uncheck the "Generate Link" checkbox
+        function uncheckGenerateLink() {
+            // const insertLinkCheckbox = document.querySelector('#insert_link');
+            // insertLinkCheckbox.checked = false;
+            document.querySelector('#insert_link').checked = false;
+        }
+
+        // Attach event listeners to all radio buttons
+        radioButtons.forEach(radio => {
+            radio.addEventListener("change", toggleGenerateLink);
+            radio.addEventListener('change', uncheckGenerateLink);
+        });
+
+
+
+        
+
+        
+        // Initialize checkbox state on page load
+        toggleGenerateLink();
+        
+
+
+        // Initial Function Calls
+        fetchClients();
+        refreshProjects(); // Populate projects on page load (if client is pre-selected)
+        //updateSeekerAndStatus(); // Populate seekers and statuses on page load (if client and project are pre-selected)
+        updateTable(); // Initial Table Update on Page Load
+        
+        fetchEmails(); // Trigger email fetching when email type changes
+        //toggleCCField(); // Set CC field visibility based on the selected email type
+        //updateCCOptions(); // Populate CC options
+        
+        //sendDataToBackend(); // Send client and project data to the backend
+        //toggleEmailOptions(); // Initialize email options (e.g., unique link insertion)
+        //handleEmailTypeChange(); // Initialize email type handling
+
+        initialize(); // Initialize the script on DOMContentLoaded
+    });
+    </script>
+
+   
+    
+</head>
+<body>
+    <!-- Loading Spinner -->
+    <!-- <div id="loadingSpinner" class="spinner-overlay" style="display: none;" aria-live="assertive" aria-busy="true">
+        <div class="spinner-border text-primary" role="status">
+            <span class="sr-only">Loading...</span>
+        </div>
+    </div> -->
+
+
+    <div class="container mt-5">
+        <div class="logo">
+            <img src="{% static 'App_Admin/image/admin_removebg_preview.png' %}" alt="Company Logo">
+        </div>
+
+        <h1>NeuCode Admin | Email Trigger</h1>
+
+        <!-- {% if messages %}
+            <div class="alert-messages">
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+                {% endfor %}
+            </div>
+        {% endif %} -->
+
+        <div>
+            <select onchange="location = this.value;">
+                <option value="{% url 'admin1_compose_email' %}">Compose Email</option>
+                <option value="{% url 'admin2_generate_reports' %}">Generate Reports</option>
+                <option value="{% url 'admin3_dashboard' %}">Dashboard</option>
+            </select>
+        </div>
+
+        <div>
+            
+            <form method="get">
+                
+                <label for="clientDropdown">Select Client:</label>
+                <select id="clientDropdown" name="client" onchange="refreshProjects()">
+                    <option value="">Select Clients</option>
+                </select>
+
+                <label for="projectDropdown">Select Project:</label>
+                <select id="projectDropdown" name="project">
+                    <option value="">Select Projects</option>
+                </select>
+
+            
+                <!-- <label for="status">Select Status:</label>
+                <select name="status" id="statusDropdown">
+                    <option value="">Select Status</option>      Options will be dynamically populated via JavaScript 
+                </select> -->
+
+            </form>
+        </div>
+
+        <div class="table-container" style="position: relative; max-height: 300px; overflow-y: auto; overflow-x: auto; border: 1px solid #ddd; border-radius: 5px;">
+            <table class="table table-striped table-bordered" style="width: 98%; border-collapse: collapse;">
+                <thead style="position: sticky; top: 0; z-index: 2; background-color: #3498db;">
+                    <tr>
+                        <th style="width: 15%;">Seeker Name</th>
+                        <th style="width: 20%;">Seeker Email</th>
+                        <th style="width: 15%;">Provider Name</th>
+                        <th style="width: 20%;">Provider Email</th>
+                        <th style="width: 15%;">Relationship</th>
+                        <!-- <th style="width: 15%;">Status</th> -->
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Dynamic rows will be populated here -->
+                </tbody>
+            </table>
+        </div>
+
+
+
+
+        <h2>Send Email</h2>
+        <div class="radio-group">
+            <label>Select Email Type:</label>
+            <div>
+
+                <input type="radio" id="seeker_email" name="email_type" value="seeker" checked>
+                <label for="seeker_email">Seeker Email</label>
+                
+                <input type="radio" id="provider_email" name="email_type" value="provider" >
+                <label for="provider_email">Provider Email</label>
+                
+                <input type="radio" id="superuser_email" name="email_type" value="superuser">
+                <label for="superuser_email">Superuser Email</label>
+
+                <br>
+                <input type="radio" id="status_email" name="email_type" value="seeker_status">
+                <label for="seeker_status_email">Seeker O/I Status Email</label>
+
+                <input type="radio" id="status_email" name="email_type" value="provider_status">
+                <label for="provider_status_email">Provider O/I Status Email</label>
+
+                <br>
+                <input type="checkbox" id="insert_link" name="insert_link" value="true">
+                <label for="insert_link" class="tick-btn">Generate Link</label>
+
+            </div>
+        </div>
+        
+        <div id="messageContainer"></div>
+
+        
+            
+        <form method="post" action="{% url 'compose_email' %}" id="emailForm" onsubmit="showLoadingSpinner()">
+            {% csrf_token %}
+            <div class="form-group">
+                <label for="subject">Subject:</label>
+                <input type="text" id="subject" name="subject" class="form-control" required>
+            </div>
+
+
+            <div class="form-group">
+                <label for="email_field">Selected Emails:</label>
+                <textarea id="email_field" name="email_field" class="form-control no-tinymce" rows="4" cols="50" ></textarea>
+                <small class="form-text text-muted">* Separate multiple emails with commas (Use text input).</small><br>
+                <small class="form-text text-muted">* A link cannot be generated or triggered in the email if the email ID is not present in the database.</small><br>
+                <small class="form-text text-muted">* Link is generated in database by these steps as follows Select Client > Select Project > Select Email Type > Tick Generate Link.</small>
+            </div>
+            
+
+            <div class="form-group" id="cc_field">
+                <label for="cc_input">CC:</label>
+                <textarea id="cc_input" name="cc_input" class="form-control no-tinymce" placeholder="Add custom email" rows="4" cols="50"   ></textarea>
+                <small class="form-text text-muted">Separate multiple emails with commas (Use text input).</small>
+            </div>
+            
+            <div class="form-group">
+                <label for="emailBody">Email Content:</label>
+                <textarea id="emailBody" name="emailBody" class="form-control" rows="10"></textarea>
+            </div>
+
+            
+            <button type="submit" class="btn btn-primary" onclick="return confirm('Are you sure you want to Send Email?')">Send Email</button>
+        </form>
+        <div id="messageContainer2"></div>
+
+        <!-- {% if messages %}
+            <div class="alert-messages">
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+                {% endfor %}
+            </div>
+        {% endif %} -->
+    </div>
+    <script>
+        
+        // function showLoadingSpinner() {
+        //     const loadingSpinner = document.getElementById('loadingSpinner');
+        //     loadingSpinner.style.display = 'flex';
+        // }
+
+        // document.getElementById('emailForm').addEventListener('submit', function(event) {
+        //     showLoadingSpinner();
+        // });
+    </script>
+</body>
+</html>

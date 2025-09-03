@@ -1,0 +1,305 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NeuCode Admin | Generate Reports</title>
+    <!-- Link to favicon -->
+    <link rel="icon" type="image/x-icon" href="{% static 'App_Admin/image/admin_brain_company_icon_no_bg.ico' %}">
+    
+    <link rel="stylesheet" href="{% static 'App_Admin/admin.css' %}">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        
+        document.addEventListener('DOMContentLoaded', function () {
+            async function fetchClients() {
+                try {
+                    // Fetch clients from the backend API
+                    const response = await fetch('/fetch-client-fromview/');
+                    if (!response.ok) {
+                        throw new Error(`Failed to fetch clients: ${response.statusText}`);
+                    }
+
+                    // Parse JSON response
+                    const data = await response.json();
+                    console.log('Clients fetched:', data);
+
+                    // Get the dropdown element
+                    const clientDropdown = document.getElementById('clientDropdown');
+                    clientDropdown.innerHTML = '<option value="">All Clients</option>'; // Reset dropdown options
+
+                    // Populate the dropdown with fetched clients
+                    if (data.clients && data.clients.length > 0) {
+                        data.clients.forEach(client => {
+                            const option = document.createElement('option');
+                            option.value = client.client_name;
+                            option.textContent = client.client_name;
+                            clientDropdown.appendChild(option);
+                        });
+                    } else {
+                        console.warn('No clients found.');
+                    }
+                } catch (error) {
+                    console.error('Error fetching clients:', error);
+                }
+            }
+
+            async function refreshProjects() {
+                // Get the selected client name from the dropdown
+                const clientName = document.querySelector('#clientDropdown').value; 
+                // Select the project dropdown and reset it immediately
+                const projectSelect = document.querySelector('#projectDropdown');
+                projectSelect.innerHTML = '<option value="">Select Project</option>'; // Always reset the dropdown
+                if (!clientName) return; // Exit if no client is selected
+
+                try {
+                    // Call the backend API using the selected client name
+                    const response = await fetch(`/get-projects-by-client-fromview/${encodeURIComponent(clientName)}/`);
+                    console.log('Selected Client Name:', clientName);
+                    console.log('API Request URL:', `/get-projects-by-client-fromview/${encodeURIComponent(clientName)}/`);
+
+                    if (!response.ok) throw new Error('Failed to fetch projects');
+
+                    const data = await response.json(); // Parse the JSON response 
+                    
+                    // Debugging: Log the received data
+                    console.log('Received Data:', data);
+
+                // Extract unique project names using a Set
+                    const uniqueProjects = [...new Set(data.projects.map(project => project.project_name))];
+                    
+                    // Debugging: Log the unique project names
+                    console.log('Unique Projects:', uniqueProjects);
+
+                    // Populate the project dropdown
+                    const projectSelect = document.querySelector('#projectDropdown');
+                    projectSelect.innerHTML = '<option value="">Select Project</option>'; // Reset dropdown
+                    // data.projects.forEach(project => {  
+                    //     console.log('Project Object:', project);
+
+                    //     const option = document.createElement('option');
+                    //     option.value = project.project_name; // Use project_name as the value
+                    //     option.textContent = project.project_name; // Display project_name
+                    //     projectSelect.appendChild(option);
+                    // });
+                    uniqueProjects.forEach(projectName => {  
+                        const option = document.createElement('option');
+                        option.value = projectName; // Use project_name as the value
+                        option.textContent = projectName; // Display project_name
+                        projectSelect.appendChild(option);
+                    });
+                } catch (error) {
+                    console.error('Error fetching projects:', error);
+                }
+            }
+        
+       
+
+
+
+        async function updateTable() {
+            const clientDropdown = document.querySelector('select[name="client"]');
+            const projectDropdown = document.querySelector('select[name="project"]');
+
+            // Verify that the elements exist
+            if (!clientDropdown || !projectDropdown) {
+                console.error('Dropdown elements are missing from the DOM.');
+                return;
+            }
+
+            const clientName = clientDropdown.value;
+            const projectName = projectDropdown.value;
+
+            try {
+                console.log('Fetching table data for:', { clientName, projectName });
+
+                // Fetch filtered data from the backend using template literals
+                const response = await fetch(`/report-generation-table-fromview/?client_name=${encodeURIComponent(clientName)}&project_name=${encodeURIComponent(projectName)}`);
+                if (!response.ok) throw new Error('Failed to fetch filtered table data');
+
+                const data = await response.json(); // Parse the JSON response
+                console.log('Filtered Data:', data);
+
+                // Populate the table
+                const tableBody = document.querySelector('.table-container table tbody');
+                tableBody.innerHTML = ''; // Clear existing table rows
+
+                if (data.client_projects && data.client_projects.length > 0) {
+                    data.client_projects.forEach(project => {
+                        const row = document.createElement('tr');
+
+                        // Use template literals for innerHTML
+                        row.innerHTML = `
+                            <td>${project.seeker_name || 'N/A'}</td>
+                            <td>${project.seeker_email || 'N/A'}</td>
+                            <td>${project.min_eligible || 'N/A'}</td>
+                            <td>${project.optimum_criteria || 'N/A'}</td>
+                        `;
+
+                        tableBody.appendChild(row);
+                    });
+                } else {
+                    const noDataRow = document.createElement('tr');
+                    noDataRow.innerHTML = '<td colspan="4" class="text-center">No data found for the selected filters.</td>';
+                    tableBody.appendChild(noDataRow);
+                }
+            } catch (error) {
+                console.error('Error fetching and populating table:', error);
+            }
+        }
+
+
+
+
+        // Client and Project Dropdowns
+        const clientDropdown = document.querySelector('select[name="client"]');
+        const projectDropdown = document.querySelector('select[name="project"]');
+
+        // Listener for Client Dropdown
+        if (clientDropdown) {
+            clientDropdown.addEventListener('change', () => {
+                console.log('Client selection changed:', clientDropdown.value);
+                refreshProjects(); // Updates the project dropdown based on selected client
+                updateTable();
+            });
+        }
+
+        if (projectDropdown) {
+            projectDropdown.addEventListener('change', () => {
+            updateTable(); // Update the table
+            
+            }); 
+        }
+
+        // Handle Generate Reports Form Submission via GET
+        const generateReportsForm = document.getElementById('generateReportsForm');
+        if (generateReportsForm) {
+            generateReportsForm.addEventListener('submit', function(e) {
+                e.preventDefault(); // Prevent default form submission
+
+                // Retrieve the selected client and project values
+                const selectedClient = clientDropdown.value.trim();
+                const selectedProject = projectDropdown.value.trim();
+
+                // Validate selections (optional but recommended)
+                if (!selectedClient || !selectedProject) {
+                    alert('Please select both Client and Project before generating reports.');
+                    return;
+                }
+
+                // Construct the URL with query parameters
+                const url = `{% url 'run_generate_reports' %}?client_name=${encodeURIComponent(selectedClient)}&project_name=${encodeURIComponent(selectedProject)}`;
+
+                // Show loading message
+                document.getElementById("statusMessage").innerText = "Generating reports... Please wait.";
+                document.getElementById("statusMessage").style.color = "red";  // Makes the text red
+
+
+                fetch(url, {
+                        method: "GET",
+                    })
+                    .then(response => response.json())  // Parse JSON response
+                    .then(data => {
+                        if (data.message) {
+                            document.getElementById("statusMessage").innerText = data.message;
+                            document.getElementById("statusMessage").style.color = "green";  // Makes the text green
+                        } else if (data.error) {
+                            document.getElementById("statusMessage").innerText = "Error: " + data.error;
+                        }
+                    })
+                    .catch(error => {
+                        document.getElementById("statusMessage").innerText = "Error processing request.";
+                        console.error("Error:", error);
+                    });
+                });
+            
+            }
+
+
+
+
+        // Initial Function Calls
+        fetchClients();
+        refreshProjects(); // Populate projects on page load (if client is pre-selected)
+        updateTable();
+
+    });
+    </script>
+
+</head>
+<body>
+    <div class="container mt-5">
+        <div class="logo">
+            <img src="{% static 'App_Admin/image/admin_removebg_preview.png' %}" alt="Company Logo">
+        </div>
+
+        <h1>NeuCode Admin | Generate Reports</h1>
+
+        {% if messages %}
+            <div class="alert-messages">
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        <!-- Navigation Dropdown -->
+        <div class="mb-4">
+            <select onchange="location = this.value;" class="form-select">
+                <option value="{% url 'admin1_compose_email' %}" {% if request.resolver_match.url_name == 'admin1_compose_email' %}selected{% endif %}>Compose Email</option>
+                <option value="{% url 'admin2_generate_reports' %}" {% if request.resolver_match.url_name == 'admin2_generate_reports' %}selected{% endif %}>Generate Reports</option>
+                <option value="{% url 'admin3_dashboard' %}" {% if request.resolver_match.url_name == 'admin3_dashboard' %}selected{% endif %}>Dashboard</option>
+            </select>
+        </div> 
+        
+
+        <!-- Filters Form -->
+        <div>
+            
+            <form method="get">
+                
+                <label for="clientDropdown">Select Client:</label>
+                <select id="clientDropdown" name="client" onchange="refreshProjects()">
+                    <option value="">All Clients</option>
+                </select>
+
+                <label for="projectDropdown">Select Project:</label>
+                <select id="projectDropdown" name="project">
+                    <option value="">All Projects</option>
+                </select>
+
+            </form>
+        </div>
+        
+        <!-- Status message area -->
+        <p id="statusMessage"></p>
+
+        <!-- Evaluate/Generate button -->
+        <form method="get" action="{% url 'run_generate_reports' %}" id="generateReportsForm">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-primary" onclick="return confirm('Are you sure you want to generate reports?')">Generate Reports</button>
+        </form>
+        
+
+        <!-- Feedback Seekers Table -->
+        <div class="table-container" style="position: relative; max-height: 300px; overflow-y: auto; overflow-x: auto; border: 1px solid #ddd; border-radius: 5px;">
+            <table class="table table-striped table-bordered" style="width: 98%; border-collapse: collapse;">
+                <thead style="position: sticky; top: 0; z-index: 2; background-color: #3498db;">
+                    <tr>
+                        <th style="width: 15%;">Seeker Name</th>
+                        <th style="width: 20%;">Seeker Email</th>
+                        <th style="width: 12%;">Minimum Eligible</th>
+                        <th style="width: 12%;">Optimum Criteria</th>
+                        
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Dynamic rows will be populated here -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+</body>
+</html>

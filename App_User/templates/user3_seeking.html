@@ -1,0 +1,101 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NeuAssessment | Participants Information</title>
+    <!-- Link to favicon -->
+    <link rel="icon" type="image/x-icon" href="{% static 'App_User/image/user_brain_company_icon_no_bg.ico' %}">
+    <link rel="stylesheet" href="{% static 'App_User/User.css' %}">
+
+    <script>
+        
+        document.addEventListener('DOMContentLoaded', function () {
+
+            // Function to get query parameters from the URL
+            function getQueryParams() {
+                const params = {};
+                const queryString = window.location.search.substring(1);
+                const pairs = queryString.split('&');
+                for (let pair of pairs) {
+                    const [key, value] = pair.split('=');
+                    if (key) {
+                        params[decodeURIComponent(key)] = decodeURIComponent(value || '');
+                    }
+                }
+                return params;
+            }
+
+            const queryParams = getQueryParams();
+            const id = queryParams['id'];
+            const email = queryParams['email'];
+            const cp_id = queryParams['cp_id'];
+            const provider_id = queryParams['provider_id'];
+            const seeker_id = queryParams['seeker_id'];
+
+            // Log the values or use them as needed
+            console.log(`id: ${id}`);
+            console.log(`Email: ${email}`);
+            console.log(`CP ID: ${cp_id}`);
+            console.log(`Provider ID: ${provider_id}`);
+            console.log(`Seeker ID: ${seeker_id}`);
+        });
+    </script>
+
+</head>
+<body>
+    <div class="container mt-5">
+        <div class="logo">
+            <img src="{% static 'App_User/image/user_removebg_preview.png' %}" alt="Company Logo">
+        </div>
+
+        <h1 class="text-center mb-4">NeuAssessment | Participants Information</h1>
+
+        <!-- Back button -->
+        <div class="text-center mb-4">
+            <a href="{% url 'user2_provider' %}?id={{ unique_id }}&email={{ email }}&cp_id={{ cp_id }}&provider_id={{ provider_id }}" class="btn btn-secondary btn-lg">Back</a>
+        </div>
+
+        <!-- Table for Feedback Providers -->
+        <div class="table-responsive">
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Email ID</th>
+                        <th>Relationship with Seeker</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if providers %}
+                        {% for provider in providers %}
+                        <tr>
+                            <td>{{ provider.provider_name }}</td>
+                            <td>{{ provider.provider_email }}</td>
+                            <td>{{ provider.relationship }}</td>
+                            <td>
+                                <span class="badge 
+                                    {% if provider.status == 'Open' %} bg-success 
+                                    {% elif provider.status == 'Completed' %} bg-primary 
+                                    {% elif provider.status == 'In-Progress' %} bg-warning 
+                                    {% else %} bg-secondary 
+                                    {% endif %}">
+                                    {{ provider.status }}
+                                </span>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td colspan="4" class="text-center">No feedback providers found.</td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</body>
+</html>

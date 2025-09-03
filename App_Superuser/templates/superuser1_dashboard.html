@@ -1,0 +1,291 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Superuser | Dashboard</title>
+    <!-- Link to favicon -->
+    <link rel="icon" type="image/x-icon" href="{% static 'App_Superuser/image/super_brain_company_icon_no_bg.ico' %}">
+    
+    <link rel="stylesheet" href="{% static 'App_Superuser/super.css' %}">
+    
+
+    
+
+    <script>
+        
+        document.addEventListener('DOMContentLoaded', function () {
+
+            // Function to get query parameters from the URL
+            function getQueryParams() {
+                const params = {};
+                const queryString = window.location.search.substring(1);
+                const pairs = queryString.split('&');
+                for (let pair of pairs) {
+                    const [key, value] = pair.split('=');
+                    if (key) {
+                        params[decodeURIComponent(key)] = decodeURIComponent(value || '');
+                    }
+                }
+                return params;
+            }
+
+            const queryParams = getQueryParams();
+            const cp_id = queryParams['cp_id'];
+            const email = queryParams['email'];
+            // You can extract other parameters similarly if needed
+            
+            async function updateTable() {
+                const statusDropdown = document.querySelector('select[name="status"]');
+                const seekerSearch = document.getElementById('seekerSearch').value.toLowerCase().trim();
+                const providerSearch = document.getElementById('providerSearch').value.toLowerCase().trim();
+                
+                if (!cp_id ) {
+                    console.error('cp_id is missing in the URL.');
+                    return;
+                }
+
+                const status = statusDropdown.value;
+                console.log('Selected Status:', status);
+
+                try {
+                    console.log('Fetching table data for cp_id, status, seekerSearch, providerSearch:', cp_id, status, seekerSearch, providerSearch);
+
+                    // Fetch filtered data from the backend using cp_id
+                    const response = await fetch(`/superuser-table-filtered-data/?cp_id=${encodeURIComponent(cp_id)}&status=${encodeURIComponent(status)}`);
+                    if (!response.ok) throw new Error('Failed to fetch filtered table data');   
+
+                    const data = await response.json(); // Parse the JSON response
+                    console.log('Filtered Data:', data);
+
+                    // Populate the table
+                    const tableBody = document.querySelector('.table-container table tbody');
+                    tableBody.innerHTML = ''; // Clear existing table rows
+
+                    if (data.client_projects && data.client_projects.length > 0) {
+                        data.client_projects.forEach(project => {
+
+                            const seekerName = project.seeker_name ? project.seeker_name.toLowerCase() : '';
+                            const providerName = project.provider_name ? project.provider_name.toLowerCase() : '';
+                            
+                            const matchesSearch = (text, search) => {
+                                if (!search) return true; // No search applied
+                                const searchWords = search.split(/\s+/); // Split by spaces
+                                return searchWords.every(word => text.includes(word)); // All words must exist in text
+                            };
+                            
+                            if (
+                            matchesSearch(seekerName, seekerSearch) &&
+                            matchesSearch(providerName, providerSearch)
+                        ) {
+                            const row = document.createElement('tr');
+
+                            row.innerHTML = `
+                                <td>${project.seeker_name || 'N/A'}</td>
+                                <td>${project.seeker_email || 'N/A'}</td>
+                                <td>${project.provider_name || 'N/A'}</td>
+                                <td>${project.provider_email || 'N/A'}</td>
+                                <td>${project.relationship || 'N/A'}</td>
+                                <td>
+                                    <span class="badge ${
+                                        project.status === 'Open' ? 'bg-success' :
+                                        project.status === 'In-Progress' ? 'bg-warning' :
+                                        project.status === 'Completed' ? 'bg-primary' : 'bg-secondary'
+                                    }">
+                                        ${project.status ? project.status.charAt(0).toUpperCase() + project.status.slice(1) : 'N/A'}
+                                    </span>
+                                </td>
+                            `;
+
+                            tableBody.appendChild(row);
+                            }
+                            
+                        });
+                    } else {
+                        const noDataRow = document.createElement('tr');
+                        noDataRow.innerHTML = '<td colspan="6" class="text-center">No data found for the selected filters.</td>';
+                        tableBody.appendChild(noDataRow);
+                    }
+                } catch (error) {
+                    console.error('Error fetching and populating table:', error);
+                }
+            }
+
+            async function fetchOverallHeader() {
+                try {
+                    const response = await fetch(`/superuser-overall-dashboard/?cp_id=${encodeURIComponent(cp_id)}`);
+                    if (!response.ok) throw new Error('Failed to fetch overall dashboard header');
+
+                    const data = await response.json();
+                    document.querySelector('.overall-participants').textContent = data.participants;
+                    document.querySelector('.overall-open').textContent = data.open;
+                    document.querySelector('.overall-in-progress').textContent = data.in_progress;
+                    document.querySelector('.overall-completed').textContent = data.completed;
+                } catch (error) {
+                    console.error('Error fetching overall dashboard header:', error);
+                    // Optionally, display an error message in the UI
+                    const header = document.querySelector('.card-body');
+                    header.innerHTML += '<div class="alert alert-danger">Failed to load dashboard header data.</div>';
+                }
+            }
+            document.getElementById("export-pdf").addEventListener("click", function () {
+                // Replace <cp_id_value> with the actual cp_id value you want to pass.
+                //const cpId = prompt("Enter cp_id for the report:"); // Example input for cp_id
+                if (!cp_id) {
+                    alert("cp_id is required to generate the PDF.");
+                    return;
+                }
+        
+                // Redirect to the PDF endpoint with the cp_id parameter
+                window.location.href = `/superuser_pdf?cp_id=${encodeURIComponent(cp_id)}`;
+            });
+
+            const statusDropdown = document.querySelector('select[name="status"]');
+
+            if (statusDropdown) {
+                statusDropdown.addEventListener('change', () => {
+                updateTable(); // Update the table
+                
+                });
+            }
+
+            // Listener for Search Inputs
+            document.getElementById('seekerSearch').addEventListener('input', updateTable);
+            document.getElementById('providerSearch').addEventListener('input', updateTable);
+            // Initial Function Calls
+            
+            updateTable();
+            fetchOverallHeader();
+
+       
+        });
+    </script>
+    <!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.9.2/html2pdf.bundle.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const exportButton = document.getElementById('export-pdf');
+            exportButton.addEventListener('click', function () {
+                // Hide the button temporarily to exclude it from the PDF
+                exportButton.style.display = 'none';
+    
+                const element = document.querySelector('.container'); // Element to export
+    
+                const options = {
+                    margin: 0.5,
+                    filename: 'dashboard_snapshot.pdf',
+                    image: { type: 'jpeg', quality: 0.98 },
+                    html2canvas: { scale: 2 },
+                    jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' },
+                };
+    
+                html2pdf().set(options).from(element).save().then(() => {
+                    // Restore the button visibility
+                    exportButton.style.display = 'block';
+                }).catch(err => {
+                    console.error('Error generating PDF:', err);
+                    exportButton.style.display = 'block'; // Restore visibility in case of error
+                });
+            });
+        });
+    </script> -->
+    
+    
+
+    
+</head>
+<body>
+    <div class="container mt-5">
+        <div class="logo">
+            <img src="{% static 'App_Superuser/image/super_removebg_preview.png' %}" alt="Company Logo">
+        </div>
+
+        <h1>Dashboard</h1>
+
+        {% if messages %}
+            <div class="alert-messages">
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }} mb-2">{{ message }}</div>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+
+        <!-- Overall Dashboard Header -->
+        <h3>Overall Status</h3>
+        <div class="card my-3">
+            <div class="card-body">
+                <div class="participants-box">
+                    <h5>Feedback Requested</h5>
+                    <h2 class="overall-participants">0</h2>
+                </div>
+                <div class="open-box">
+                    <h5>Open</h5>
+                    <h2 class="overall-open">0</h2>
+                </div>
+                <div class="in-progress-box">
+                    <h5>In Progress</h5>
+                    <h2 class="overall-in-progress">0</h2>
+                </div>
+                <div class="complete-box">
+                    <h5>Completed</h5>
+                    <h2 class="overall-completed">0</h2>
+                </div>
+            </div>
+        </div>
+
+
+        <!-- Filters Form -->
+        <form method="get" class="filter-form mb-4">
+            
+            
+            <button id="export-pdf" type="button" class="btn btn-primary no-export">Export Status Data</button>
+            
+        </form>
+
+        <!-- <form method="post" action="{% url 'run_generate_reports' %}">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-primary" onclick="return confirm('Are you sure you want to generate reports?')">Generate Reports</button>
+        </form> -->
+
+        <!-- Status Filter Dropdowns -->
+        <form>
+            <label for="statusDropdown">Select Status:</label>
+            <select id="statusDropdown" name="status">
+                <option value="">All Status</option>
+                <option value="Open">Open</option>
+                <option value="In-Progress">In-Progress</option>
+                <option value="Completed">Completed</option>
+            </select>
+        </form>
+        <!-- Search Boxes -->
+        <div class="search-container mb-4">
+            <label for="seekerSearch">Search Seeker Name:</label>
+            <input type="text" id="seekerSearch" name="seekerSearch" class="form-control" placeholder="Type to search...">
+            
+            <label for="providerSearch">Search Provider Name:</label>
+            <input type="text" id="providerSearch" name="providerSearch" class="form-control" placeholder="Type to search...">
+        </div>  
+
+        <!-- Table -->
+        <div class="table-container" style="position: relative; max-height: 300px; overflow-y: auto; overflow-x: auto; border: 1px solid #ddd; border-radius: 5px;">
+            <table class="table table-striped table-bordered" style="width: 98%; border-collapse: collapse;">
+                <thead style="position: sticky; top: 0; z-index: 2; background-color: #8d34db;">
+                    <tr>
+                        <th style="width: 15%;">Seeker Name</th>
+                        <th style="width: 20%;">Seeker Email</th>
+                        <th style="width: 15%;">Provider Name</th>
+                        <th style="width: 20%;">Provider Email</th>
+                        <th style="width: 15%;">Relationship</th>
+                        <th style="width: 15%;">Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Dynamic rows will be populated here -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+</body>
+</html>

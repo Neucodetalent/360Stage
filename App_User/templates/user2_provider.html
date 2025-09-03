@@ -1,0 +1,148 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NeuAssessment | Participants Information</title>
+    <link rel="stylesheet" href="{% static 'App_User/User.css' %}">
+    <!-- Link to favicon -->
+    <link rel="icon" type="image/x-icon" href="{% static 'App_User/image/user_brain_company_icon_no_bg.ico' %}">
+    <script>
+        
+        document.addEventListener('DOMContentLoaded', function () {
+
+            // Function to get query parameters from the URL
+            function getQueryParams() {
+                const params = {};
+                const queryString = window.location.search.substring(1);
+                const pairs = queryString.split('&');
+                for (let pair of pairs) {
+                    const [key, value] = pair.split('=');
+                    if (key) {
+                        params[decodeURIComponent(key)] = decodeURIComponent(value || '');
+                    }
+                }
+                return params;
+            }
+
+            const queryParams = getQueryParams();
+            const id = queryParams['id'];
+            const email = queryParams['email'];
+            const cp_id = queryParams['cp_id'];
+            const provider_id = queryParams['provider_id'];
+
+            // Log the values or use them as needed
+            console.log(`id: ${id}`);
+            console.log(`Email: ${email}`);
+            console.log(`CP ID: ${cp_id}`);
+            console.log(`Provider ID: ${provider_id}`);
+
+            
+
+        });
+
+
+        
+        // document.addEventListener('DOMContentLoaded', function () {
+        //     // Check if there are any seekers in the table
+        //     const tableBody = document.querySelector('table tbody');
+        //     const feedbackStatusButton = document.querySelector('.btn.btn-info.btn-lg');
+
+        //     if (tableBody && feedbackStatusButton) {
+        //         // If the table contains a row with "No feedback seekers found", disable the button
+        //         const noDataRow = tableBody.querySelector('td[colspan]');
+        //         if (noDataRow && noDataRow.textContent.trim() === "No feedback seekers found.") {
+        //             feedbackStatusButton.disabled = true;
+        //             feedbackStatusButton.classList.add('btn-secondary'); // Change button style
+        //             feedbackStatusButton.classList.remove('btn-info');
+                    
+        //         }
+        //     }
+        // });
+        
+
+    </script>
+
+</head>
+<body>
+    <div class="container mt-5">
+        <div class="logo">
+            <img src="{% static 'App_User/image/user_removebg_preview.png' %}" alt="Company Logo">
+        </div>
+        <h1 class="text-center mb-4">NeuAssessment | Participants Information</h1>
+
+        <!-- Button to navigate to feedback provider status page -->
+        <div class="text-center mb-4" style="display: flex; justify-content: space-between; align-items: center;">
+
+            
+                <!-- {% if seekerid and seekerid != "None" and seekerid != "" %}
+                    
+                    <a href="{% url 'user3_seeking' %}?id={{ unique_id }}&email={{ email }}&cp_id={{ cp_id }}&provider_id={{ provider_id }}&seeker_id={{ seekerid }}" class="btn btn-info btn-lg">See Feedback Provider Status</a>
+                {% else %}
+                    
+                    <a href="#" class="btn btn-secondary btn-lg" disabled>See Feedback Provider Status</a>
+                {% endif %} -->
+                
+        <!-- </div> -->
+
+        <!-- Back button -->
+        <!-- <div class="text-center mb-4"> -->
+            <a href="{% url 'user1_instructions' %}?id={{ unique_id }}&email={{ email }}&cp_id={{ cp_id }}&provider_id={{ provider_id }}" class="btn btn-secondary btn-lg">Back</a>
+            <a href="{% url 'user3_seeking' %}?id={{ unique_id }}&email={{ email }}&cp_id={{ cp_id }}&provider_id={{ provider_id }}&seeker_id={{seekerid}}" class="btn btn-info btn-lg">See Feedback Provider Status</a>    
+        </div>
+
+        <!-- Table for Feedback Seekers -->
+        <div class="table-responsive">
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Email ID</th>
+                        <th>Relationship with Seeker</th>
+                        <th>Status</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if seekers %}
+                        {% for seeker in seekers %}
+                        <tr>
+                            <td>{{ seeker.seeker_name }}</td>
+                            <td>{{ seeker.seeker_email }}</td>
+                            <td>{{ seeker.relationship }}</td>
+                            <td>
+                                <!-- Display status with color-coded badges -->
+                                <span class="badge 
+                                    {% if seeker.status == 'Open' %} bg-success 
+                                    {% elif seeker.status == 'In-Progress' %} bg-warning 
+                                    {% elif seeker.status == 'Completed' %} bg-primary 
+                                    {% else %} bg-secondary 
+                                    {% endif %}">
+                                    {{ seeker.status|title }} <!-- Capitalize status text -->
+                                </span>
+                            </td>
+                            <td>
+                                <!-- Action Button: Disabled when status is "completed" -->
+                                {% if seeker.status == 'Completed' %}
+                                    <button class="btn btn-sm btn-secondary" disabled>Completed</button>
+                                {% else %}
+                                    <a href="{% url 'user4_mcq_questions' %}?id={{ unique_id }}&email={{ email }}&cp_id={{ cp_id }}&provider_id={{ provider_id }}&seeker_id={{seeker.seeker_id}}" class="btn btn-sm btn-primary" style="font-size: 20px;">⇨</a>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td colspan="5" class="text-center">
+                                No feedback seekers found.
+                            </td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</body>
+</html>

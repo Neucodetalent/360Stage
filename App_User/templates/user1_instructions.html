@@ -1,0 +1,88 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NeuAssessment</title>
+    <!-- Link to favicon -->
+    <link rel="icon" type="image/x-icon" href="{% static 'App_User/image/user_brain_company_icon_no_bg.ico' %}">
+
+    <link rel="stylesheet" href="{% static 'App_User/User.css' %}">
+    <script>
+        
+        document.addEventListener('DOMContentLoaded', function () {
+
+            // Function to get query parameters from the URL
+            function getQueryParams() {
+                const params = {};
+                const queryString = window.location.search.substring(1);
+                const pairs = queryString.split('&');
+                for (let pair of pairs) {
+                    const [key, value] = pair.split('=');
+                    if (key) {
+                        params[decodeURIComponent(key)] = decodeURIComponent(value || '');
+                    }
+                }
+                return params;
+            }
+
+            const queryParams = getQueryParams();
+            const id = queryParams['id'];
+            const email = queryParams['email'];
+            const cp_id = queryParams['cp_id'];
+            const provider_id = queryParams['provider_id'];
+
+            // Log the values or use them as needed
+            console.log(`id: ${id}`);
+            console.log(`Email: ${email}`);
+            console.log(`CP ID: ${cp_id}`);
+            console.log(`Provider ID: ${provider_id}`);
+        });
+    </script>
+</head>
+<body>
+    <div class="container mt-5">
+        
+        <div class="logo">
+            <img src="{% static 'App_User/image/user_removebg_preview.png' %}" alt="Company Logo">
+        </div>
+    
+        <h1>Welcome to NeuAssessment</h1>
+        
+        <div class="content-section">
+            <p>
+                We at <strong>{{ evolve_title }}</strong> are glad to inform you that you’ve been invited to provide feedback as part of <strong>{{ evolve_project }}</strong>.
+            </p>
+            <p>
+                This task holds a lot of responsibility and must be done with a complete focus and intent for development purposes only.
+            </p>
+        </div>
+
+        <div class="content-section">
+            <h3>POINTS TO REMEMBER</h3>
+            <ul>
+                <li>There are no right or wrong answers to these questions.</li>
+                <li>As the intent of this assessment is only for development, please provide your inputs with utmost honesty and without any biases.</li>
+                <li>Please remove any distractions, be in a relaxed environment while answering these questions.</li>
+                <li>Take out about 15 minutes of dedicated time to complete this assessment in one go.</li>
+                <li>All the responses to this questionnaire will remain anonymous, except for self and supervisor scores.</li>
+                <li>If there are certain questions you are not equipped to answer owing to your relationship and roles, please feel free to use the “NOT APPLICABLE” choice.</li>
+            </ul>
+        </div>
+
+        <div class="content-section">
+            <p>
+                <strong>ACTION REQUIRED:</strong> To be completed by <strong>{{ deadline }}</strong> for the participant(s) by Clicking the button below:
+            </p>
+
+            <div class="center-button">
+                <!-- Link to Page 2 -->
+                <a href="{% url 'user2_provider' %}?id={{ unique_id }}&email={{ email }}&cp_id={{ cp_id }}&provider_id={{ provider_id }}" class="btn btn-primary btn-lg">Show Participants</a>
+            </div>
+            
+        </div>
+    </div>
+</body>
+</html>

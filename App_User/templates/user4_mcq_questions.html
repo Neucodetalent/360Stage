@@ -1,0 +1,181 @@
+{% load static %}
+{% load custom_filters %}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NeuAssessment</title>
+    <!-- Link to favicon -->
+    <link rel="icon" type="image/x-icon" href="{% static 'App_User/image/user_brain_company_icon_no_bg.ico' %}">
+    <link rel="stylesheet" href="{% static 'App_User/User2.css' %}">
+
+    <script>
+        
+        document.addEventListener('DOMContentLoaded', function () {
+
+            // Function to get query parameters from the URL
+            function getQueryParams() {
+                const params = {};
+                const queryString = window.location.search.substring(1);
+                const pairs = queryString.split('&');
+                for (let pair of pairs) {
+                    const [key, value] = pair.split('=');
+                    if (key) {
+                        params[decodeURIComponent(key)] = decodeURIComponent(value || '');
+                    }
+                }
+                return params;
+            }
+
+            const queryParams = getQueryParams();
+            const id = queryParams['id'];
+            const email = queryParams['email'];
+            const cp_id = queryParams['cp_id'];
+            const provider_id = queryParams['provider_id'];
+            const seeker_id = queryParams['seeker_id'];
+
+            // Log the values or use them as needed
+            console.log(`id: ${id}`);
+            console.log(`Email: ${email}`);
+            console.log(`CP ID: ${cp_id}`);
+            console.log(`Provider ID: ${provider_id}`);
+            console.log(`Seeker ID: ${seeker_id}`);
+        });
+    </script>
+</head>
+<body>
+    <div class="container mt-5">
+        <div class="logo">
+            <img src="{% static 'App_User/image/user_removebg_preview.png' %}" alt="Company Logo">
+        </div>
+        <h1 class="text-center mb-4">NeuAssessment</h1>
+
+        
+
+        <div class="text-center mb-4" style="display: flex; justify-content: space-between; align-items: center;">
+            <a href="{% url 'user2_provider' %}?id={{ unique_id }}&email={{ email }}&cp_id={{ cp_id }}&provider_id={{ provider_id }}" class="btn btn-secondary btn-lg">Back</a>
+        
+            <!-- Save as Draft Button -->
+            <!-- <a href="{% url 'user4_mcq_questions' %}?id={{ unique_id }}&email={{ email }}&cp_id={{ cp_id }}&provider_id={{ provider_id }}&seeker_id={{seeker_id}}" onclick="document.getElementById('saveAsDraftForm').submit();" class="btn btn-secondary btn-lg">Save as Draft</a> -->
+
+            <!-- <div class="text-center mt-4"> -->
+            <button type="submit" name="save_as_draft" class="btn btn-secondary btn-lg " onclick="submitForm()">Save as Draft</button>
+            <!-- </div> -->
+            
+        </div>
+        
+        
+        {% if messages %}
+            <div class="alert-messages">
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+                {% endfor %}
+            </div>
+        {% endif %}
+        
+        <!-- Display Seeker Name and Email -->
+        <div class="text-center mb-4">
+            <p><strong>Seeker Name:</strong> {{ seeker_name }}</p>
+            <p><strong>Seeker Email:</strong> {{ seeker_email }}</p>
+        </div>
+
+        <p>Please select one option below:</p>
+        <p class="comma-separated">1-Strongly Disagree,&nbsp;&nbsp; 2-Disagree,&nbsp;&nbsp; 3-Neutral,&nbsp;&nbsp; 4-Agree,&nbsp;&nbsp; 5-Strongly Agree,&nbsp;&nbsp; N/A-Not Applicable</p>
+
+        <!-- Form to submit answers, including seeker_id in the action URL -->
+        <form method="POST" action="{% url 'user4_mcq_questions' %}?id={{ unique_id }}&email={{ email }}&cp_id={{ cp_id }}&provider_id={{ provider_id }}&seeker_id={{seeker_id}}" id="mcqForm">
+            {% csrf_token %}
+            
+            <div class="table-container">
+                <table class="responsive-table ">
+                    <thead>
+                        <tr>
+                            <th>Questions</th>
+                            <th>Answer</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for provider in questionss %}
+                        <tr>
+                            <td class="question-cell">{{ provider.question_text }}</td>
+                            <td class="answer-cell">
+                                <div class="inline-rating">
+                                    {% for value in rating_options %}
+                                    <label>
+                                        <input type="radio" name="rating_{{ provider.question_id }}" value="{{ value }}"
+                                        {% if value|stringformat:"s" == draft_answers|get_item:provider.question_id|stringformat:"s" %}checked="checked"{% endif %}
+                                               onclick="checkAllAnswered()">
+                                        {{ value }}
+                                    </label>
+                                    {% endfor %}
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="text-center mt-4">
+                <button type="submit" name="save_as_draft" class="btn btn-secondary btn-lg">Save as Draft</button>
+                
+
+                
+                
+                <!-- <button type="submit" name="continue" class="btn btn-primary btn-lg" id="continueButton" style="pointer-events: none; opacity: 0.6;">Continue</button> -->
+                <button type="submit" name="continue" class="btn btn-primary btn-lg" id="continueButton" >Continue</button>
+            </div>
+        </form>
+    </div>
+
+    <!-- JavaScript to enable the Continue button if all questions are answered -->
+    <script>
+        
+        function submitForm() {
+            const form = document.getElementById('mcqForm');
+        
+        // Add a hidden input to indicate "save as draft"
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = 'save_as_draft';
+        input.value = 'true';
+        
+        form.appendChild(input);
+        form.submit(); // Submit the form
+        }
+
+        function checkAllAnswered() {
+            const form = document.getElementById('mcqForm');
+            const continueButton = document.getElementById('continueButton');
+
+            // Get all unique question names (radio group names)
+            const questionNames = new Set();
+            form.querySelectorAll('input[type="radio"]').forEach(input => questionNames.add(input.name));
+
+            // Check if every question (radio group) has one option selected
+            const allQuestionsAnswered = Array.from(questionNames).every(name => {
+                return form.querySelector(`input[name="${name}"]:checked`);
+            });
+
+            // Enable or disable the 'Continue' button based on whether all questions are answered
+            // if (allQuestionsAnswered) {
+            //     continueButton.style.pointerEvents = "auto";
+            //     continueButton.style.opacity = "1";
+            // } else {
+            //     continueButton.style.pointerEvents = "none";
+            //     continueButton.style.opacity = "0.6";
+            // }
+            // Enable or disable the "Submit" button
+            continueButton.disabled = !allQuestionsAnswered;
+            continueButton.style.opacity = allQuestionsAnswered ? "1" : "0.6";
+        }
+
+        // Initial check in case of pre-filled draft answers
+        document.addEventListener('DOMContentLoaded', checkAllAnswered);
+
+    </script>
+</body>
+</html>

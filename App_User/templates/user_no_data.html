@@ -1,0 +1,45 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>No Data Available</title>
+    <!-- Link to favicon -->
+    <link rel="icon" type="image/x-icon" href="{% static 'App_User/image/user_brain_company_icon_no_bg.ico' %}">
+    <link rel="stylesheet" href="{% static 'App_User/User.css' %}">
+</head>
+<body>
+    <div class="container mt-5">
+
+        <div class="logo">
+            <img src="{% static 'App_User/image/user_removebg_preview.png' %}" alt="Company Logo">
+        </div>
+
+        <h1 class="text-center mb-4">NeuAssessment | Participants Information</h1>
+
+        <!-- Back button -->
+        <div class="text-center mb-4">
+            <a href="{% url 'user2_provider' %}?id={{ unique_id }}&email={{ email }}&cp_id={{ cp_id }}&provider_id={{ provider_id }}" class="btn btn-secondary btn-lg">Back</a>
+        </div>
+
+        <!-- Centered Content -->
+        <div class="text-center">
+            <!-- Alert Message -->
+            <div class="alert alert-warning" role="alert">
+                <h4 class="alert-heading">No Data Available</h4>
+                <!-- <p>There is no data available for the selected criteria. </p> -->
+            </div>
+            
+        </div>
+    </div>
+
+    <!-- JavaScript to Handle Back Navigation
+    <script>
+        function goBack() {
+            window.history.back();
+        }
+    </script> -->
+</body>
+</html>
