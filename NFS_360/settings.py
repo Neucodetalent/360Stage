@@ -27,8 +27,8 @@ SECRET_KEY = 'django-insecure-qy6%-%f%kd6p+9g7c=u)j3v+zs3h0h*u(mhx+(vss=tnx)!s)c
 #DEBUG = True
 DEBUG = False
 
-ALLOWED_HOSTS = ['app.neucodetalent.com', '127.0.0.1']
-CSRF_TRUSTED_ORIGINS = ['https://app.neucodetalent.com', 'https://127.0.0.1']
+ALLOWED_HOSTS = ['ncstage-heebdjh6bmfweahn.eastus2-01.azurewebsites.net', '127.0.0.1']
+CSRF_TRUSTED_ORIGINS = ['https://ncstage-heebdjh6bmfweahn.eastus2-01.azurewebsites.net', 'https://127.0.0.1']
 
 # Application definition
 
@@ -108,10 +108,10 @@ WSGI_APPLICATION = 'NFS_360.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'mssql',  # Adjust as needed for your backend
-        'NAME': os.environ.get('DATABASE_NAME', 'neucode-sql-prod'),
-        'USER': os.environ.get('DATABASE_USER', 'stageadmin360'),
-        'PASSWORD': os.environ.get('DATABASE_PASSWORD', 'Neu@dev143'),
-        'HOST': os.environ.get('DATABASE_HOST', 'neucode-server-stage.database.windows.net'),
+        'NAME': os.environ.get('DATABASE_NAME', 'neucode-sql-dev'),
+        'USER': os.environ.get('DATABASE_USER', 'neucodeadmin'),
+        'PASSWORD': os.environ.get('DATABASE_PASSWORD', 'AASU@123'),
+        'HOST': os.environ.get('DATABASE_HOST', 'neucode-server-dev.database.windows.net'),
         'PORT': os.environ.get('DATABASE_PORT', '1433'),  # Default MSSQL port
         'OPTIONS': {
             'driver': 'ODBC Driver 18 for SQL Server',
