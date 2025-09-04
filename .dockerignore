@@ -1,0 +1,9 @@
+.git
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+node_modules/
+venv/
+.env
+app.zip

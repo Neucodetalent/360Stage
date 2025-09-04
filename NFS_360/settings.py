@@ -108,10 +108,10 @@ WSGI_APPLICATION = 'NFS_360.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'mssql',  # Adjust as needed for your backend
-        'NAME': os.environ.get('DATABASE_NAME', 'neucode-sql-dev'),
-        'USER': os.environ.get('DATABASE_USER', 'neucodeadmin'),
-        'PASSWORD': os.environ.get('DATABASE_PASSWORD', 'AASU@123'),
-        'HOST': os.environ.get('DATABASE_HOST', 'neucode-server-dev.database.windows.net'),
+        'NAME': os.environ.get('DATABASE_NAME', 'neucode-sql-prod'),
+        'USER': os.environ.get('DATABASE_USER', 'stageadmin360'),
+        'PASSWORD': os.environ.get('DATABASE_PASSWORD', 'Neu@dev143'),
+        'HOST': os.environ.get('DATABASE_HOST', 'neucode-server-stage.database.windows.net'),
         'PORT': os.environ.get('DATABASE_PORT', '1433'),  # Default MSSQL port
         'OPTIONS': {
             'driver': 'ODBC Driver 18 for SQL Server',
@@ -132,7 +132,6 @@ EMAIL_USE_TLS = True
 EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER', 'mylearning@neucodetalent.com')
 EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', 'JulNeu$25')
 DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
-
 
 
 
