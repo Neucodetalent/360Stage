@@ -9,8 +9,8 @@ from .settings import BASE_DIR
 # DEBUG = False
 
 SECRET_KEY = os.environ.get('SECRET', 'qy6%-%f%kd6p+9g7c=u)j3v+zs3h0h*u(mhx+(vss=tnx)!s)c')  # Provide a default for safety
-ALLOWED_HOSTS = [os.environ.get('Hostname_Neucode', 'app.neucodetalent.com')]
-CSRF_TRUSTED_ORIGINS = ['https://' + os.environ.get('Hostname_Neucode', 'app.neucodetalent.com')]
+ALLOWED_HOSTS = [os.environ.get('Hostname_Neucode', 'ncstage-heebdjh6bmfweahn.eastus2-01.azurewebsites.net')]
+CSRF_TRUSTED_ORIGINS = ['https://' + os.environ.get('Hostname_Neucode', 'ncstage-heebdjh6bmfweahn.eastus2-01.azurewebsites.net')]
 
 # WhiteNoise configuration
 MIDDLEWARE = [
